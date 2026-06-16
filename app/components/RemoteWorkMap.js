@@ -165,6 +165,11 @@ export default function RemoteWorkMap({ center, initialPlaces }) {
       <section className="map-wrap" aria-label="Map of Milan">
         <div ref={mapContainerRef} className="map" />
 
+        <div className="mobile-map-label" aria-hidden="true">
+          <span>Milan remote work map</span>
+          <strong>{places.length} places</strong>
+        </div>
+
         {selectedPlace ? (
           <article className="detail-card">
             <button className="close-detail" onClick={() => setSelectedPlace(null)} type="button" aria-label="Close place detail">
