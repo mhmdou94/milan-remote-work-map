@@ -25,10 +25,12 @@ export default function RemoteWorkMap({ center, initialPlaces }) {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedPlace, setSelectedPlace] = useState(null);
   const [isMapReady, setIsMapReady] = useState(false);
+  const [sheetState, setSheetState] = useState('peek');
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
   const markersLayerRef = useRef(null);
   const leafletRef = useRef(null);
+  const sheetDragStartYRef = useRef(null);
   const places = initialPlaces || [];
   const mapCenter = center || { lat: 45.4642, lon: 9.19 };
   const filteredPlaces = filterPlaces(places, selectedCategory);
@@ -49,11 +51,19 @@ export default function RemoteWorkMap({ center, initialPlaces }) {
 
       leafletRef.current = L;
       mapRef.current = L.map(mapContainerRef.current, {
+        doubleClickZoom: true,
+        dragging: true,
         zoomControl: false,
+        tap: true,
+        touchZoom: true,
         scrollWheelZoom: true,
       }).setView([mapCenter.lat, mapCenter.lon], 13);
 
-      L.control.zoom({ position: 'bottomright' }).addTo(mapRef.current);
+      mapRef.current.on('dragstart zoomstart', () => {
+        setSheetState('peek');
+      });
+
+      L.control.zoom({ position: 'topright' }).addTo(mapRef.current);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: 19,
@@ -100,6 +110,7 @@ export default function RemoteWorkMap({ center, initialPlaces }) {
 
       marker.on('click', () => {
         setSelectedPlace(place);
+        setSheetState('peek');
         mapRef.current?.setView([place.lat, place.lon], Math.max(mapRef.current.getZoom(), 15), { animate: true });
       });
 
@@ -116,12 +127,52 @@ export default function RemoteWorkMap({ center, initialPlaces }) {
 
   function focusPlace(place) {
     setSelectedPlace(place);
+    setSheetState('peek');
     mapRef.current?.setView([place.lat, place.lon], 16, { animate: true });
+  }
+
+  function toggleSheet() {
+    setSheetState((current) => (current === 'expanded' ? 'peek' : 'expanded'));
+  }
+
+  function startSheetDrag(event) {
+    sheetDragStartYRef.current = event.clientY;
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  }
+
+  function endSheetDrag(event) {
+    const startY = sheetDragStartYRef.current;
+    sheetDragStartYRef.current = null;
+
+    if (startY === null) {
+      return;
+    }
+
+    const deltaY = event.clientY - startY;
+
+    if (Math.abs(deltaY) < 28) {
+      toggleSheet();
+      return;
+    }
+
+    setSheetState(deltaY < 0 ? 'expanded' : 'peek');
   }
 
   return (
     <main className="shell">
-      <section className="panel" aria-label="Your remote work places in Milan">
+      <section className={`panel sheet-${sheetState}`} aria-label="Your remote work places in Milan">
+        <button
+          className="sheet-handle"
+          type="button"
+          onPointerDown={startSheetDrag}
+          onPointerUp={endSheetDrag}
+          onPointerCancel={() => {
+            sheetDragStartYRef.current = null;
+          }}
+          aria-label={sheetState === 'expanded' ? 'Collapse places panel' : 'Expand places panel'}
+        >
+          <span />
+        </button>
         <div className="headline">
           <p className="eyebrow">Milan remote work map</p>
           <h1>Your places to work.</h1>
@@ -143,6 +194,9 @@ export default function RemoteWorkMap({ center, initialPlaces }) {
 
         <div className="status-row csv-status">
           <span>{filteredPlaces.length} visible places · {places.length} total</span>
+          <button className="sheet-toggle" type="button" onClick={toggleSheet}>
+            {sheetState === 'expanded' ? 'Map' : 'List'}
+          </button>
         </div>
 
         <ol className="place-list" aria-label="Saved places">
