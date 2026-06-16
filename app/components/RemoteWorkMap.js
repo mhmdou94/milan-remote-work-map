@@ -24,6 +24,7 @@ const FRIENDLY_COLORS = {
 export default function RemoteWorkMap({ center, initialPlaces }) {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedPlace, setSelectedPlace] = useState(null);
+  const [isMapReady, setIsMapReady] = useState(false);
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
   const markersLayerRef = useRef(null);
@@ -59,6 +60,7 @@ export default function RemoteWorkMap({ center, initialPlaces }) {
       }).addTo(mapRef.current);
 
       markersLayerRef.current = L.layerGroup().addTo(mapRef.current);
+      setIsMapReady(true);
     }
 
     initMap();
@@ -69,13 +71,14 @@ export default function RemoteWorkMap({ center, initialPlaces }) {
       mapRef.current = null;
       markersLayerRef.current = null;
       leafletRef.current = null;
+      setIsMapReady(false);
     };
   }, [mapCenter.lat, mapCenter.lon]);
 
   useEffect(() => {
     const L = leafletRef.current;
 
-    if (!L || !mapRef.current || !markersLayerRef.current) {
+    if (!isMapReady || !L || !mapRef.current || !markersLayerRef.current) {
       return;
     }
 
@@ -103,11 +106,13 @@ export default function RemoteWorkMap({ center, initialPlaces }) {
       marker.addTo(markersLayerRef.current);
     }
 
-    if (visiblePlaces.length > 0) {
+    if (visiblePlaces.length === 1) {
+      mapRef.current.setView([visiblePlaces[0].lat, visiblePlaces[0].lon], 15);
+    } else if (visiblePlaces.length > 1) {
       const bounds = L.latLngBounds(visiblePlaces.map((place) => [place.lat, place.lon]));
       mapRef.current.fitBounds(bounds, { padding: [48, 48], maxZoom: 14 });
     }
-  }, [places, selectedCategory]);
+  }, [isMapReady, places, selectedCategory]);
 
   function focusPlace(place) {
     setSelectedPlace(place);

@@ -1,2 +1,4 @@
 id,name,category,latitude,longitude,address,remote_work_friendly,wifi,power_outlets,cost,custom_tags,notes,score
 la-redazione-scomodo-milano,La Redazione Scomodo - Milano,Other,45.5019226,9.2178999,,friendly,on,on,unknown,wifi|power-outlets,"Remote-work friendly with Wi-Fi and power outlets",5
+le-bistrot-cafe,Le Bistrot Cafe,Cafe,45.5020886,9.1754464,,friendly,off,on,unknown,power-outlets,"Remote-work friendly, but no Wi-Fi",4
+cafezal-specialty-coffee-brera,Cafezal Specialty Coffee - Brera,Cafe,45.4786285,9.188206,,friendly,on,on,unknown,wifi|power-outlets,"Remote-work friendly with Wi-Fi and power outlets",5
