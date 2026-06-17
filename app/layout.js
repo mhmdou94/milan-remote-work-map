@@ -3,7 +3,7 @@ import './globals.css';
 
 export const metadata = {
   title: 'Milan Remote Work Map',
-  description: 'OpenStreetMap places in Milan that may be useful for remote workers.',
+  description: 'A trusted, community-maintained map of laptop-friendly cafes, libraries, and coworking spaces in Milan.',
 };
 
 export const viewport = {

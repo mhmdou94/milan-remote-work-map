@@ -5,6 +5,8 @@
   --line: rgba(23, 23, 23, 0.12);
   --card: rgba(255, 252, 246, 0.93);
   --accent: #2457ff;
+  --good: #007f67;
+  --bad: #b42318;
 }
 
 * {
@@ -107,6 +109,28 @@ a {
   gap: 6px;
 }
 
+.community-proof {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 10px;
+  border: 1px solid rgba(36, 87, 255, 0.16);
+  border-radius: 16px;
+  background: rgba(36, 87, 255, 0.07);
+  color: #25215f;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.contribute-link {
+  flex: none;
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-decoration: none;
+}
+
 .eyebrow,
 .detail-category {
   margin: 0;
@@ -132,13 +156,11 @@ h1 {
 }
 
 .eyebrow,
-.headline p:last-child,
-.cache-note {
+.headline p:last-child {
   display: none;
 }
 
 .headline p:last-child,
-.cache-note,
 .status-row,
 .place-meta,
 .place-address,
@@ -193,6 +215,54 @@ dd {
   color: #fff;
 }
 
+.quick-controls {
+  padding-bottom: 0;
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  gap: 8px;
+}
+
+.filter-field {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.filter-field span {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.filter-field select,
+.filter-field input {
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.76);
+  color: var(--foreground);
+  outline: none;
+}
+
+.filter-field select:focus,
+.filter-field input:focus {
+  border-color: rgba(36, 87, 255, 0.55);
+  box-shadow: 0 0 0 3px rgba(36, 87, 255, 0.11);
+}
+
+.inline-error {
+  color: var(--bad);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
 .status-row {
   display: flex;
   align-items: center;
@@ -212,32 +282,10 @@ dd {
   opacity: 0.55;
 }
 
-.csv-pill,
 .refresh.primary {
   border-color: var(--foreground);
   background: var(--foreground);
   color: #fff;
-}
-
-.csv-pill {
-  flex: none;
-  padding: 7px 10px;
-  border-radius: 999px;
-  font-size: 0.78rem;
-  font-weight: 800;
-}
-
-.status-actions,
-.form-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-.cache-note {
-  font-size: 0.8rem;
-  line-height: 1.35;
 }
 
 .place-list {
@@ -267,7 +315,7 @@ dd {
 .place-card {
   display: grid;
   width: 100%;
-  gap: 4px;
+  gap: 6px;
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: 16px;
@@ -289,14 +337,48 @@ dd {
   font-weight: 800;
 }
 
+.place-title-row {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.place-distance {
+  flex: none;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: rgba(0, 127, 103, 0.1);
+  color: var(--good);
+  font-size: 0.74rem;
+  font-weight: 900;
+}
+
 .place-meta,
 .place-address,
-.place-tags {
+.place-tags,
+.place-note,
+.trust-line,
+.best-for {
   font-size: 0.86rem;
 }
 
 .place-tags {
   color: #3f3a33;
+}
+
+.best-for {
+  color: var(--foreground);
+  font-weight: 900;
+}
+
+.place-note {
+  color: #3d3429;
+  line-height: 1.35;
+}
+
+.trust-line {
+  color: var(--muted);
 }
 
 .tag-row {
@@ -312,6 +394,32 @@ dd {
   color: var(--accent);
   font-size: 0.75rem;
   font-weight: 800;
+}
+
+.empty-state {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border: 1px dashed rgba(36, 87, 255, 0.35);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.empty-state h2 {
+  font-size: 1.2rem;
+  line-height: 1.1;
+}
+
+.empty-state p {
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .map-wrap {
@@ -412,6 +520,15 @@ dd {
   line-height: 1.05;
 }
 
+.detail-best {
+  color: var(--foreground);
+  font-weight: 900;
+}
+
+.detail-tags {
+  margin-top: -4px;
+}
+
 dl {
   display: grid;
   gap: 10px;
@@ -439,11 +556,17 @@ dd {
 .detail-actions a {
   padding: 9px 12px;
   border-radius: 999px;
+  border: 1px solid var(--foreground);
   background: var(--foreground);
   color: #fff;
   font-size: 0.88rem;
   font-weight: 700;
   text-decoration: none;
+}
+
+.detail-actions a:nth-child(n + 2) {
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--foreground);
 }
 
 @media (min-width: 861px) {
@@ -456,7 +579,7 @@ dd {
   .panel {
     position: static;
     height: auto;
-    gap: 18px;
+    gap: 14px;
     padding: 28px;
     border: 0;
     border-right: 1px solid var(--line);
@@ -500,9 +623,17 @@ dd {
     overflow: visible;
   }
 
+  .community-proof {
+    padding: 10px 12px;
+  }
+
   .chip {
     min-height: 38px;
     padding: 8px 12px;
+  }
+
+  .filter-grid {
+    grid-template-columns: 1fr;
   }
 
   .status-row {
@@ -536,7 +667,10 @@ dd {
 
   .place-meta,
   .place-address,
-  .place-tags {
+  .place-tags,
+  .place-note,
+  .trust-line,
+  .best-for {
     font-size: 0.86rem;
   }
 
@@ -545,10 +679,10 @@ dd {
     bottom: 22px;
     left: auto;
     width: min(360px, calc(100% - 44px));
-    max-height: none;
+    max-height: calc(100dvh - 44px);
     padding: 18px;
     border-radius: 24px;
-    overflow: visible;
+    overflow: auto;
   }
 
   .panel.sheet-expanded ~ .map-wrap .detail-card {
@@ -566,13 +700,13 @@ dd {
 
 @media (max-width: 480px) {
   .panel {
-    height: 44dvh;
+    height: 52dvh;
     padding-right: 12px;
     padding-left: 12px;
   }
 
   .panel.sheet-expanded {
-    height: min(84dvh, 720px);
+    height: min(88dvh, 720px);
   }
 
   .eyebrow,
@@ -584,13 +718,25 @@ dd {
     font-size: clamp(1.85rem, 10vw, 2.35rem);
   }
 
+  .community-proof {
+    align-items: start;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 10px;
+    font-size: 0.78rem;
+  }
+
+  .filter-grid {
+    grid-template-columns: 1fr;
+  }
+
   .status-row {
     font-size: 0.78rem;
   }
 
   .detail-card {
-    bottom: calc(44dvh + 8px);
-    max-height: 24dvh;
+    bottom: calc(52dvh + 8px);
+    max-height: 20dvh;
   }
 
   .panel.sheet-peek .place-list li:nth-child(n + 3) {
