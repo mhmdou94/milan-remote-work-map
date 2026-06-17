@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 
 const CATEGORIES = ['All', 'Coworking', 'Library', 'Cafe', 'Wi-Fi place', 'Other'];
 const ALL_NEIGHBORHOODS = 'All neighborhoods';
-const ISSUE_URL = 'https://github.com/MohamedDounnani94/milan-remote-work-map/issues/new';
+const ISSUE_URL = 'https://github.com/mhmdou94/milan-remote-work-map/issues/new';
 const CATEGORY_COLORS = {
   Coworking: '#2457ff',
   Library: '#7b3ff2',
