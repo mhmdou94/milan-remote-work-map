@@ -6,7 +6,7 @@ const CATEGORIES = ['All', 'Coworking', 'Library', 'Cafe', 'Wi-Fi place', 'Other
 const ALL_NEIGHBORHOODS = 'All neighborhoods';
 const ISSUE_URL = 'https://github.com/mhmdou94/milan-remote-work-map/issues/new';
 const CATEGORY_COLORS = {
-  Coworking: '#2457ff',
+  Coworking: '#006cff',
   Library: '#7b3ff2',
   Cafe: '#b25614',
   'Wi-Fi place': '#007f67',
@@ -20,12 +20,12 @@ const QUICK_FILTERS = [
 ];
 const SEARCH_FIELDS = ['name', 'category', 'neighborhood', 'bestFor', 'decisionNote', 'notes'];
 
-const CHIP_BASE = 'inline-flex min-h-10 flex-none items-center justify-center rounded-full border px-3.5 py-2 text-sm transition-colors desktop:min-h-[38px] desktop:px-3';
-const CHIP_ACTIVE = 'border-[#171717] bg-[#171717] text-white';
-const CHIP_INACTIVE = 'border-black/10 bg-white/60 text-[#171717]';
-const FILTER_INPUT = 'min-h-[38px] w-full rounded-xl border border-black/10 bg-white/75 px-2.5 py-2 text-[#171717] outline-none focus:border-[#2457ff]/55 focus:shadow-[0_0_0_3px_rgba(36,87,255,0.11)]';
-const SECONDARY_PILL = 'inline-flex flex-none items-center justify-center rounded-full border border-black/10 bg-white/70 px-3 py-2 text-sm font-bold text-[#171717] no-underline';
-const PRIMARY_PILL = 'inline-flex flex-none items-center justify-center rounded-full border border-[#171717] bg-[#171717] px-3 py-2 text-sm font-bold text-white no-underline';
+const CHIP_BASE = 'inline-flex min-h-9 flex-none items-center justify-center rounded-xl border px-3 py-2 text-sm font-bold transition-colors desktop:min-h-9';
+const CHIP_ACTIVE = 'border-[#006cff] bg-[#006cff] text-white shadow-[0_8px_18px_rgba(0,108,255,0.22)]';
+const CHIP_INACTIVE = 'border-[#d7e0e8] bg-white text-[#17212b] hover:border-[#a8bac8]';
+const FILTER_INPUT = 'min-h-11 w-full rounded-2xl border border-[#d7e0e8] bg-white px-3 py-2.5 text-sm text-[#17212b] shadow-[0_8px_24px_rgba(15,23,42,0.06)] outline-none focus:border-[#006cff]/60 focus:shadow-[0_0_0_3px_rgba(0,108,255,0.12)]';
+const SECONDARY_PILL = 'inline-flex flex-none items-center justify-center rounded-xl border border-[#d7e0e8] bg-white px-3 py-2 text-sm font-bold text-[#17212b] no-underline shadow-[0_8px_22px_rgba(15,23,42,0.06)]';
+const PRIMARY_PILL = 'inline-flex flex-none items-center justify-center rounded-xl border border-[#006cff] bg-[#006cff] px-3 py-2 text-sm font-bold text-white no-underline shadow-[0_10px_24px_rgba(0,108,255,0.22)]';
 
 export default function RemoteWorkMap({ center, initialPlaces }) {
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -162,7 +162,9 @@ export default function RemoteWorkMap({ center, initialPlaces }) {
     } else if (mapPlaces.length > 1 && !sortByDistance) {
       const bounds = L.latLngBounds(mapPlaces.map((place) => [place.lat, place.lon]));
       suppressSheetCollapseRef.current = true;
-      mapRef.current.fitBounds(bounds, { padding: [48, 48], maxZoom: 14 });
+      mapRef.current.fitBounds(bounds, window.innerWidth >= 861
+        ? { paddingTopLeft: [440, 64], paddingBottomRight: [64, 64], maxZoom: 14 }
+        : { padding: [48, 48], maxZoom: 14 });
     }
   }, [isMapReady, places, selectedCategory, selectedNeighborhood, searchTerm, activeFilters, sortByDistance]);
 
@@ -273,9 +275,9 @@ export default function RemoteWorkMap({ center, initialPlaces }) {
     : 'overflow-auto';
 
   return (
-    <main className="relative isolate block h-screen h-[100dvh] overflow-hidden bg-[#d7decd] desktop:grid desktop:grid-cols-[420px_minmax(0,1fr)] desktop:bg-[#f3f0e8]">
+    <main className="relative isolate block h-screen h-[100dvh] overflow-hidden bg-[#dce5df]">
       <section
-        className={`${sheetHeight} absolute inset-x-0 bottom-0 z-20 flex min-h-0 flex-col gap-2.5 overflow-hidden rounded-t-[28px] border border-b-0 border-black/10 bg-[#fff9ec]/98 px-3 pb-[max(16px,env(safe-area-inset-bottom))] pt-2 shadow-[0_-22px_70px_rgba(24,17,8,0.2)] backdrop-blur-md transition-[height,max-height,box-shadow] duration-200 ease-out desktop:static desktop:h-auto desktop:max-h-none desktop:gap-3.5 desktop:rounded-none desktop:border-0 desktop:border-r desktop:border-black/10 desktop:bg-gradient-to-b desktop:from-[#fff9ec] desktop:to-[#f1eadf] desktop:p-7 desktop:shadow-none desktop:backdrop-blur-none desktop:transition-none`}
+        className={`${sheetHeight} absolute inset-x-0 bottom-0 z-20 flex min-h-0 flex-col gap-2.5 overflow-hidden rounded-t-[26px] border border-b-0 border-[#d7e0e8] bg-white/95 px-3 pb-[max(16px,env(safe-area-inset-bottom))] pt-2 shadow-[0_-22px_70px_rgba(15,23,42,0.18)] backdrop-blur-md transition-[height,max-height,box-shadow] duration-200 ease-out desktop:inset-x-auto desktop:top-4 desktop:bottom-4 desktop:left-4 desktop:z-[520] desktop:h-auto desktop:max-h-none desktop:w-[400px] desktop:gap-3 desktop:rounded-[24px] desktop:border desktop:border-[#d7e0e8] desktop:bg-white/95 desktop:p-4 desktop:shadow-[0_22px_70px_rgba(15,23,42,0.16)] desktop:backdrop-blur-md desktop:transition-none`}
         aria-label="Laptop-friendly places in Milan"
       >
         <button
@@ -322,20 +324,24 @@ export default function RemoteWorkMap({ center, initialPlaces }) {
           />
         ) : null}
 
-        <div className={`${browsePanelClass} min-h-0 flex-1 flex-col gap-2.5 desktop:flex desktop:gap-3.5`}>
-          <div className="grid flex-none gap-1.5 desktop:gap-2.5">
-            <p className="hidden text-xs font-extrabold uppercase tracking-[0.14em] text-[#2457ff] desktop:block">Milan remote work map</p>
-            <h1 className="font-serif text-[clamp(1.85rem,10vw,2.35rem)] leading-[0.84] tracking-[-0.07em] min-[481px]:text-[clamp(1.9rem,9vw,2.45rem)] desktop:max-w-[9ch] desktop:text-[clamp(3rem,8vw,5.4rem)] desktop:tracking-[-0.08em]">
-              Find a place to work in Milan.
-            </h1>
-            <p className="hidden max-w-[34ch] text-base leading-normal text-[#666057] desktop:block">Community-curated laptop spots, not every cafe.</p>
-          </div>
-
-          <div className="flex flex-none flex-col items-start justify-between gap-1 rounded-2xl border border-[#2457ff]/15 bg-[#2457ff]/10 p-2.5 text-[0.78rem] font-extrabold text-[#25215f] min-[481px]:flex-row min-[481px]:items-center desktop:text-[0.82rem]">
-            <span>Maintained by remote workers in Milan</span>
-            <a className="flex-none text-xs font-black text-[#2457ff] no-underline" href={contributionUrl('suggest')} target="_blank" rel="noreferrer">
-              Suggest a place
-            </a>
+        <div className={`${browsePanelClass} min-h-0 flex-1 flex-col gap-2.5 desktop:flex desktop:gap-3`}>
+          <div className="grid flex-none gap-2">
+            <label className="grid min-w-0 gap-1">
+              <span className="sr-only">Search places</span>
+              <input
+                className={`${FILTER_INPUT} text-base desktop:text-sm`}
+                type="search"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Search Milan work spots"
+              />
+            </label>
+            <div className="flex items-center justify-between gap-2 text-[0.78rem] font-bold text-[#51606f]">
+              <span>{visiblePlaces.length} matches / {places.length} places</span>
+              <a className="flex-none text-xs font-black text-[#006cff] no-underline" href={contributionUrl('suggest')} target="_blank" rel="noreferrer">
+                Suggest place
+              </a>
+            </div>
           </div>
 
           <div className="-mx-3 flex flex-none gap-2 overflow-x-auto px-3 pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden desktop:mx-0 desktop:flex-wrap desktop:overflow-visible desktop:p-0" aria-label="Category filters">
@@ -351,25 +357,15 @@ export default function RemoteWorkMap({ center, initialPlaces }) {
             ))}
           </div>
 
-          <div className="grid flex-none grid-cols-1 gap-2 min-[481px]:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] desktop:grid-cols-1" aria-label="Practical filters">
+          <div className="grid flex-none grid-cols-1 gap-2" aria-label="Practical filters">
             <label className="grid min-w-0 gap-1">
-              <span className="text-[0.7rem] font-black uppercase tracking-[0.08em] text-[#666057]">Neighborhood</span>
+              <span className="text-[0.7rem] font-black uppercase tracking-[0.08em] text-[#51606f]">Neighborhood</span>
               <select className={FILTER_INPUT} value={selectedNeighborhood} onChange={(event) => setSelectedNeighborhood(event.target.value)}>
                 <option>{ALL_NEIGHBORHOODS}</option>
                 {neighborhoods.map((neighborhood) => (
                   <option key={neighborhood}>{neighborhood}</option>
                 ))}
               </select>
-            </label>
-            <label className="grid min-w-0 gap-1">
-              <span className="text-[0.7rem] font-black uppercase tracking-[0.08em] text-[#666057]">Search</span>
-              <input
-                className={FILTER_INPUT}
-                type="search"
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Brera, calls, quiet..."
-              />
             </label>
           </div>
 
@@ -391,9 +387,8 @@ export default function RemoteWorkMap({ center, initialPlaces }) {
 
           {locationError ? <p className="flex-none text-xs font-bold text-[#b42318]">{locationError}</p> : null}
 
-          <div className="flex flex-none items-center justify-between gap-3 text-[0.78rem] text-[#666057] desktop:text-sm">
-            <span>{visiblePlaces.length} matches / {places.length} curated places</span>
-            <button className="inline-flex min-h-[34px] items-center justify-center rounded-full border border-[#171717] bg-[#171717] px-3 py-1.5 text-xs font-extrabold text-white desktop:hidden" type="button" onClick={toggleSheet}>
+          <div className="flex flex-none items-center justify-end gap-3 desktop:hidden">
+            <button className="inline-flex min-h-[34px] items-center justify-center rounded-xl border border-[#17212b] bg-[#17212b] px-3 py-1.5 text-xs font-extrabold text-white" type="button" onClick={toggleSheet}>
               {sheetState === 'expanded' ? 'Map' : 'List'}
             </button>
           </div>
@@ -405,26 +400,26 @@ export default function RemoteWorkMap({ center, initialPlaces }) {
 
                 return (
                   <li key={place.id}>
-                    <button className={`grid w-full gap-1.5 rounded-2xl border p-3 text-left text-[#171717] transition-colors desktop:p-3.5 desktop:rounded-[18px] ${selectedPlace?.id === place.id ? 'border-[#2457ff]/55 bg-white/90' : 'border-black/10 bg-white/60 hover:border-[#2457ff]/55 hover:bg-white/90'}`} onClick={() => focusPlace(place)} type="button">
+                    <button className={`grid w-full gap-1.5 rounded-2xl border p-3 text-left text-[#17212b] transition-colors desktop:rounded-[18px] desktop:p-3.5 ${selectedPlace?.id === place.id ? 'border-[#006cff]/60 bg-[#f2f7ff]' : 'border-[#d7e0e8] bg-white hover:border-[#006cff]/55 hover:bg-[#f8fbff]'}`} onClick={() => focusPlace(place)} type="button">
                       <span className="flex items-start justify-between gap-2.5">
                         <span className="text-[0.96rem] font-extrabold desktop:text-base">{place.name}</span>
                         {distance ? <span className="flex-none rounded-full bg-[#007f67]/10 px-2 py-0.5 text-xs font-black text-[#007f67]">{distance}</span> : null}
                       </span>
-                      <span className="text-sm text-[#666057]">{place.neighborhood} / {place.category}</span>
+                      <span className="text-sm text-[#51606f]">{place.neighborhood} / {place.category}</span>
                       {place.bestFor ? <span className="text-sm font-black text-[#171717]">Best for: {place.bestFor}</span> : null}
                       <span className="text-sm text-[#3f3a33]">{formatCardAttributes(place)}</span>
-                      {place.decisionNote ? <span className="text-sm leading-snug text-[#3d3429]">{place.decisionNote}</span> : null}
+                      {place.decisionNote ? <span className="text-sm leading-snug text-[#344252]">{place.decisionNote}</span> : null}
                       <BadgeRow badges={place.badges} />
-                      <span className="text-sm text-[#666057]">Last checked: {place.lastChecked || 'needs check'} / {place.verifiedBy || 'community submitted'}</span>
+                      <span className="text-sm text-[#51606f]">Last checked: {place.lastChecked || 'needs check'} / {place.verifiedBy || 'community submitted'}</span>
                     </button>
                   </li>
                 );
               })}
             </ol>
           ) : (
-            <div className="grid gap-2.5 rounded-[18px] border border-dashed border-[#2457ff]/35 bg-white/60 p-4">
+            <div className="grid gap-2.5 rounded-[18px] border border-dashed border-[#006cff]/35 bg-white p-4">
               <h2 className="text-xl font-bold leading-tight">No trusted places match this filter yet.</h2>
-              <p className="text-sm leading-snug text-[#666057]">Try clearing filters, switching neighborhood, or suggest a laptop-friendly place locals should verify.</p>
+              <p className="text-sm leading-snug text-[#51606f]">Try clearing filters, switching neighborhood, or suggest a laptop-friendly place locals should verify.</p>
               <div className="flex flex-wrap gap-2">
                 <button className={SECONDARY_PILL} type="button" onClick={clearFilters}>Clear filters</button>
                 <a className={PRIMARY_PILL} href={contributionUrl('suggest')} target="_blank" rel="noreferrer">Suggest a place</a>
@@ -434,17 +429,12 @@ export default function RemoteWorkMap({ center, initialPlaces }) {
         </div>
       </section>
 
-      <section className="relative z-0 h-full min-h-0 min-w-0" aria-label="Map of Milan">
+      <section className="absolute inset-0 z-0 h-full min-h-0 min-w-0" aria-label="Map of Milan">
         <div ref={mapContainerRef} className="h-full w-full bg-[#d7decd]" />
-
-        <div className="absolute left-[max(12px,env(safe-area-inset-left))] top-[max(12px,env(safe-area-inset-top))] z-[450] grid gap-0.5 rounded-[18px] border border-black/10 bg-[#fffcf6]/95 px-3 py-2.5 text-[#171717] shadow-[0_14px_44px_rgba(24,17,8,0.16)] backdrop-blur desktop:hidden" aria-hidden="true">
-          <span className="text-[0.62rem] font-black uppercase tracking-[0.12em] text-[#2457ff]">Trusted Milan work spots</span>
-          <strong className="text-base">{places.length} places</strong>
-        </div>
 
         {selectedPlace ? (
           <PlaceDetail
-            className="hidden max-h-[calc(100dvh-44px)] w-[min(360px,calc(100%-44px))] overflow-auto rounded-3xl border border-black/10 bg-[#fffcf6]/95 p-[18px] shadow-[0_24px_80px_rgba(24,17,8,0.22)] backdrop-blur desktop:absolute desktop:right-5 desktop:bottom-5 desktop:left-auto desktop:z-[500] desktop:grid"
+            className="hidden max-h-[calc(100dvh-32px)] w-[min(360px,calc(100%-44px))] overflow-auto rounded-3xl border border-[#d7e0e8] bg-white/95 p-[18px] shadow-[0_24px_80px_rgba(15,23,42,0.18)] backdrop-blur desktop:absolute desktop:right-4 desktop:bottom-4 desktop:left-auto desktop:z-[540] desktop:grid"
             onClose={closePlaceDetail}
             place={selectedPlace}
           />
@@ -476,18 +466,12 @@ function getSheetHeightClass(hasSelectedPlace, sheetState) {
 
 function MapSummary({ activeFiltersCount, matchesCount, onClearFilters, onShowList, totalCount }) {
   return (
-    <article className="grid gap-2 pb-1 desktop:hidden">
-      <div className="flex items-start justify-between gap-3">
-        <div className="grid gap-1">
-          <p className="text-[0.66rem] font-extrabold uppercase tracking-[0.14em] text-[#2457ff]">Milan remote work map</p>
-          <h2 className="text-xl font-black leading-tight tracking-tight text-[#171717]">Explore the map</h2>
-        </div>
-        <button className={PRIMARY_PILL} onClick={onShowList} type="button">List</button>
-      </div>
-      <p className="text-sm text-[#666057]">{matchesCount} matches / {totalCount} curated places</p>
+    <article className="flex items-center justify-between gap-3 pb-1 desktop:hidden">
+      <p className="text-sm font-bold text-[#51606f]">{matchesCount} matches / {totalCount} places</p>
       {activeFiltersCount > 0 ? (
-        <button className={`${SECONDARY_PILL} justify-self-start`} onClick={onClearFilters} type="button">Clear filters</button>
+        <button className={SECONDARY_PILL} onClick={onClearFilters} type="button">Clear</button>
       ) : null}
+      <button className={PRIMARY_PILL} onClick={onShowList} type="button">List</button>
     </article>
   );
 }
@@ -496,15 +480,15 @@ function PlaceSummary({ onClose, onExpand, place }) {
   return (
     <article className="grid gap-2 pb-1">
       <div className="flex items-start justify-between gap-3">
-        <p className="text-[0.66rem] font-extrabold uppercase tracking-[0.14em] text-[#2457ff]">
+        <p className="text-[0.66rem] font-extrabold uppercase tracking-[0.14em] text-[#006cff]">
           {place.neighborhood} / {place.category}
         </p>
         <button className={SECONDARY_PILL} onClick={onClose} type="button" aria-label="Back to places list">
           Back
         </button>
       </div>
-      <h2 className="text-xl font-black leading-tight tracking-tight text-[#171717]">{place.name}</h2>
-      {place.bestFor ? <p className="text-sm font-black text-[#171717]">Best for: {place.bestFor}</p> : null}
+      <h2 className="text-xl font-black leading-tight tracking-tight text-[#17212b]">{place.name}</h2>
+      {place.bestFor ? <p className="text-sm font-black text-[#17212b]">Best for: {place.bestFor}</p> : null}
       <BadgeRow badges={place.badges} />
       <div className="flex flex-wrap gap-2">
         <button className={PRIMARY_PILL} onClick={onExpand} type="button">Details</button>
@@ -518,15 +502,15 @@ function PlaceDetail({ className, closeAriaLabel = 'Close place detail', closeLa
   return (
     <article className={`grid gap-3 ${className || ''}`}>
       <div className="flex items-start justify-between gap-3">
-        <p className="text-[0.66rem] font-extrabold uppercase tracking-[0.14em] text-[#2457ff] desktop:text-xs">
+        <p className="text-[0.66rem] font-extrabold uppercase tracking-[0.14em] text-[#006cff] desktop:text-xs">
           {place.neighborhood} / {place.category}
         </p>
         <button className={SECONDARY_PILL} onClick={onClose} type="button" aria-label={closeAriaLabel}>
           {closeLabel}
         </button>
       </div>
-      <h2 className="text-[1.45rem] font-black leading-[1.05] tracking-tight text-[#171717]">{place.name}</h2>
-      {place.bestFor ? <p className="font-black text-[#171717]">Best for: {place.bestFor}</p> : null}
+      <h2 className="text-[1.45rem] font-black leading-[1.05] tracking-tight text-[#17212b]">{place.name}</h2>
+      {place.bestFor ? <p className="font-black text-[#17212b]">Best for: {place.bestFor}</p> : null}
       <BadgeRow badges={place.badges} />
       <dl className="grid gap-2.5">
         {detail('Wi-Fi', formatQuality(place.wifiQuality))}
@@ -563,7 +547,7 @@ function BadgeRow({ badges }) {
   return (
     <span className="flex flex-wrap gap-1.5">
       {badges.map((badge) => (
-        <span className="rounded-full bg-[#2457ff]/10 px-2 py-0.5 text-xs font-extrabold text-[#2457ff]" key={badge}>{badge}</span>
+        <span className="rounded-full bg-[#006cff]/10 px-2 py-0.5 text-xs font-extrabold text-[#006cff]" key={badge}>{badge}</span>
       ))}
     </span>
   );
@@ -572,8 +556,8 @@ function BadgeRow({ badges }) {
 function detail(label, value) {
   return (
     <div key={label}>
-      <dt className="text-xs font-extrabold uppercase tracking-[0.1em] text-[#171717]">{label}</dt>
-      <dd className="mt-0.5 leading-snug text-[#666057]">{value}</dd>
+      <dt className="text-xs font-extrabold uppercase tracking-[0.1em] text-[#17212b]">{label}</dt>
+      <dd className="mt-0.5 leading-snug text-[#51606f]">{value}</dd>
     </div>
   );
 }
