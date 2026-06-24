@@ -99,8 +99,8 @@ export default function RemoteWorkMap({ center, initialPlaces }) {
       });
 
       L.control.zoom({ position: 'topright' }).addTo(mapRef.current);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
         maxZoom: 19,
       }).addTo(mapRef.current);
 
@@ -394,25 +394,18 @@ export default function RemoteWorkMap({ center, initialPlaces }) {
           </div>
 
           {visiblePlaces.length > 0 ? (
-            <ol className={`${peekListClass} grid min-h-0 flex-1 grid-cols-1 gap-2.5 p-0 pr-1 pb-[max(14px,env(safe-area-inset-bottom))] list-none [-webkit-overflow-scrolling:touch] desktop:gap-2.5 desktop:pb-3.5`} aria-label="Saved places">
+            <ol className={`${peekListClass} grid min-h-0 flex-1 grid-cols-1 gap-3 p-0 pr-1 pb-[max(14px,env(safe-area-inset-bottom))] list-none [-webkit-overflow-scrolling:touch] desktop:gap-3 desktop:pb-3.5`} aria-label="Saved places">
               {visiblePlaces.map((place) => {
                 const distance = formatDistance(place, userLocation);
 
                 return (
-                  <li key={place.id}>
-                    <button className={`grid w-full gap-1.5 rounded-2xl border p-3 text-left text-[#17212b] transition-colors desktop:rounded-[18px] desktop:p-3.5 ${selectedPlace?.id === place.id ? 'border-[#006cff]/60 bg-[#f2f7ff]' : 'border-[#d7e0e8] bg-white hover:border-[#006cff]/55 hover:bg-[#f8fbff]'}`} onClick={() => focusPlace(place)} type="button">
-                      <span className="flex items-start justify-between gap-2.5">
-                        <span className="text-[0.96rem] font-extrabold desktop:text-base">{place.name}</span>
-                        {distance ? <span className="flex-none rounded-full bg-[#007f67]/10 px-2 py-0.5 text-xs font-black text-[#007f67]">{distance}</span> : null}
-                      </span>
-                      <span className="text-sm text-[#51606f]">{place.neighborhood} / {place.category}</span>
-                      {place.bestFor ? <span className="text-sm font-black text-[#171717]">Best for: {place.bestFor}</span> : null}
-                      <span className="text-sm text-[#3f3a33]">{formatCardAttributes(place)}</span>
-                      {place.decisionNote ? <span className="text-sm leading-snug text-[#344252]">{place.decisionNote}</span> : null}
-                      <BadgeRow badges={place.badges} />
-                      <span className="text-sm text-[#51606f]">Last checked: {place.lastChecked || 'needs check'} / {place.verifiedBy || 'community submitted'}</span>
-                    </button>
-                  </li>
+                  <PlaceCard
+                    distance={distance}
+                    isSelected={selectedPlace?.id === place.id}
+                    key={place.id}
+                    onSelect={() => focusPlace(place)}
+                    place={place}
+                  />
                 );
               })}
             </ol>
@@ -476,6 +469,73 @@ function MapSummary({ activeFiltersCount, matchesCount, onClearFilters, onShowLi
   );
 }
 
+function PlaceCard({ distance, isSelected, onSelect, place }) {
+  const categoryColor = CATEGORY_COLORS[place.category] || CATEGORY_COLORS.Other;
+
+  return (
+    <li>
+      <button
+        aria-label={`View details for ${place.name}`}
+        aria-pressed={isSelected}
+        className={`group relative grid w-full gap-3 overflow-hidden rounded-[22px] border px-3.5 py-3.5 pl-5 text-left text-[#17212b] shadow-[0_12px_32px_rgba(15,23,42,0.07)] transition-[border-color,box-shadow,transform,background-color] duration-150 hover:-translate-y-0.5 hover:border-[#006cff]/50 hover:shadow-[0_18px_42px_rgba(15,23,42,0.12)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006cff] desktop:px-4 desktop:py-4 desktop:pl-5 ${isSelected ? 'border-[#006cff]/70 bg-[#f2f7ff]' : 'border-[#dbe4ec] bg-white/98'}`}
+        onClick={onSelect}
+        type="button"
+      >
+        <span aria-hidden="true" className="absolute top-4 bottom-4 left-2.5 w-1 rounded-full" style={{ backgroundColor: categoryColor }} />
+
+        <span className="flex min-w-0 items-center justify-between gap-2.5">
+          <span className="flex min-w-0 items-center gap-2 text-[0.68rem] font-black uppercase tracking-[0.12em] text-[#5f6d7c]">
+            <span aria-hidden="true" className="h-2 w-2 flex-none rounded-full" style={{ backgroundColor: categoryColor }} />
+            <span className="truncate">{place.neighborhood}</span>
+            <span className="rounded-full bg-[#eef3f7] px-2 py-0.5 text-[0.68rem] font-extrabold normal-case tracking-normal text-[#344252]">{place.category}</span>
+          </span>
+          {distance ? <span className="flex-none rounded-full bg-[#007f67]/10 px-2.5 py-1 text-xs font-black text-[#007f67]">{distance}</span> : null}
+        </span>
+
+        <span className="grid gap-1.5">
+          <span className="text-[1.03rem] font-black leading-tight tracking-[-0.02em] text-[#17212b] group-hover:text-[#005ad6] desktop:text-[1.08rem]">{place.name}</span>
+          {place.bestFor ? (
+            <span className="rounded-2xl border border-[#dce9d7] bg-[#f7fbf4] px-3 py-2 text-sm leading-snug text-[#344331]">
+              <span className="font-black text-[#17212b]">Best for: </span>{place.bestFor}
+            </span>
+          ) : null}
+        </span>
+
+        <span className="flex gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden desktop:flex-wrap desktop:overflow-visible">
+          <CardMetric label="Wi-Fi" tone={metricTone(place.wifiQuality)} value={formatQuality(place.wifiQuality)} />
+          <CardMetric label="Outlets" tone={metricTone(place.outletAvailability)} value={formatAvailability(place.outletAvailability)} />
+          <CardMetric label="Noise" tone={metricTone(place.noiseLevel)} value={formatQuality(place.noiseLevel)} />
+          <CardMetric label="Price" tone={metricTone(place.priceLevel)} value={formatPrice(place.priceLevel, place.cost)} />
+        </span>
+
+        {place.decisionNote ? <span className="text-sm leading-snug text-[#465466]">{place.decisionNote}</span> : null}
+        <BadgeRow badges={place.badges} limit={3} />
+
+        <span className="flex items-center justify-between gap-3 border-t border-[#e8eef4] pt-2 text-xs font-bold text-[#667483]">
+          <span className="min-w-0 truncate">Checked {place.lastChecked || 'needs check'} by {place.verifiedBy || 'community'}</span>
+          <span className="flex-none font-black text-[#006cff]">View details</span>
+        </span>
+      </button>
+    </li>
+  );
+}
+
+function CardMetric({ label, tone, value }) {
+  const toneClass = {
+    good: 'border-[#c7eadc] bg-[#effbf6] text-[#006b55]',
+    neutral: 'border-[#dce5ee] bg-[#f7fafc] text-[#344252]',
+    bad: 'border-[#f1cfc9] bg-[#fff6f3] text-[#b42318]',
+    unknown: 'border-[#e3e8ef] bg-[#f8fafc] text-[#667483]',
+  }[tone] || 'border-[#e3e8ef] bg-[#f8fafc] text-[#667483]';
+
+  return (
+    <span className={`grid min-w-[82px] flex-none gap-0.5 rounded-2xl border px-2.5 py-2 ${toneClass}`}>
+      <span className="text-[0.62rem] font-black uppercase tracking-[0.1em] opacity-70">{label}</span>
+      <span className="text-sm font-black capitalize leading-tight">{value}</span>
+    </span>
+  );
+}
+
 function PlaceSummary({ onClose, onExpand, place }) {
   return (
     <article className="grid gap-2 pb-1">
@@ -499,56 +559,114 @@ function PlaceSummary({ onClose, onExpand, place }) {
 }
 
 function PlaceDetail({ className, closeAriaLabel = 'Close place detail', closeLabel = 'Close', onClose, place }) {
+  const categoryColor = CATEGORY_COLORS[place.category] || CATEGORY_COLORS.Other;
+
   return (
-    <article className={`grid gap-3 ${className || ''}`}>
-      <div className="flex items-start justify-between gap-3">
-        <p className="text-[0.66rem] font-extrabold uppercase tracking-[0.14em] text-[#006cff] desktop:text-xs">
-          {place.neighborhood} / {place.category}
-        </p>
-        <button className={SECONDARY_PILL} onClick={onClose} type="button" aria-label={closeAriaLabel}>
-          {closeLabel}
-        </button>
-      </div>
-      <h2 className="text-[1.45rem] font-black leading-[1.05] tracking-tight text-[#17212b]">{place.name}</h2>
-      {place.bestFor ? <p className="font-black text-[#17212b]">Best for: {place.bestFor}</p> : null}
-      <BadgeRow badges={place.badges} />
-      <dl className="grid gap-2.5">
-        {detail('Wi-Fi', formatQuality(place.wifiQuality))}
-        {detail('Outlets', formatAvailability(place.outletAvailability))}
-        {detail('Noise', formatQuality(place.noiseLevel))}
-        {detail('Calls', formatBoolean(place.callFriendly, 'Call-friendly', 'Not ideal for calls'))}
-        {detail('Laptop policy', formatLaptopPolicy(place.laptopPolicy))}
-        {detail('Seating comfort', formatQuality(place.seatingComfort))}
-        {detail('Price', formatPrice(place.priceLevel, place.cost))}
-        {detail('Toilet', formatBoolean(place.toiletAvailable, 'Available', 'Not confirmed'))}
-        {detail('Outdoor seating', formatBoolean(place.outdoorSeating, 'Available', 'Not available'))}
-        {place.openingHours ? detail('Opening hours', place.openingHours) : detail('Opening hours', 'Needs verification')}
-        {place.address ? detail('Address', place.address) : null}
-        {place.decisionNote ? detail('Why go', place.decisionNote) : null}
-        {place.notes ? detail('Notes', place.notes) : null}
-        {detail('Last checked', place.lastChecked || 'Needs check')}
-        {detail('Verified by', place.verifiedBy || 'Community submitted')}
-        {detail('Added by', place.addedBy || 'Local contributor')}
-      </dl>
-      <div className="flex flex-wrap gap-2">
-        {place.website ? <a className={PRIMARY_PILL} href={place.website} target="_blank" rel="noreferrer">Website</a> : null}
-        <a className={SECONDARY_PILL} href={contributionUrl('confirm', place)} target="_blank" rel="noreferrer">Still good?</a>
-        <a className={SECONDARY_PILL} href={contributionUrl('update', place)} target="_blank" rel="noreferrer">Update info</a>
+    <article className={`grid content-start gap-4 ${className || ''}`}>
+      <header className="grid gap-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-2 rounded-full border border-[#dbe4ec] bg-white px-2.5 py-1 text-[0.68rem] font-black uppercase tracking-[0.12em] text-[#5f6d7c]">
+              <span aria-hidden="true" className="h-2 w-2 rounded-full" style={{ backgroundColor: categoryColor }} />
+              {place.category}
+            </span>
+            <span className="rounded-full bg-[#eef3f7] px-2.5 py-1 text-[0.72rem] font-black text-[#344252]">{place.neighborhood}</span>
+          </div>
+          <button className={SECONDARY_PILL} onClick={onClose} type="button" aria-label={closeAriaLabel}>
+            {closeLabel}
+          </button>
+        </div>
+
+        <div className="grid gap-2">
+          <h2 className="text-[1.55rem] font-black leading-[1.02] tracking-[-0.04em] text-[#17212b] desktop:text-[1.65rem]">{place.name}</h2>
+          {place.bestFor ? (
+            <p className="rounded-[18px] border border-[#dce9d7] bg-[#f7fbf4] px-3.5 py-3 text-sm leading-snug text-[#344331]">
+              <span className="font-black text-[#17212b]">Best for: </span>{place.bestFor}
+            </p>
+          ) : null}
+          <BadgeRow badges={place.badges} />
+        </div>
+      </header>
+
+      <section className="grid gap-2" aria-labelledby={`${place.id}-essentials`}>
+        <h3 id={`${place.id}-essentials`} className="text-xs font-black uppercase tracking-[0.12em] text-[#667483]">Need to know</h3>
+        <dl className="grid grid-cols-2 gap-2">
+          <DetailMetric label="Wi-Fi" tone={metricTone(place.wifiQuality)} value={formatQuality(place.wifiQuality)} />
+          <DetailMetric label="Outlets" tone={metricTone(place.outletAvailability)} value={formatAvailability(place.outletAvailability)} />
+          <DetailMetric label="Noise" tone={metricTone(place.noiseLevel)} value={formatQuality(place.noiseLevel)} />
+          <DetailMetric label="Price" tone={metricTone(place.priceLevel)} value={formatPrice(place.priceLevel, place.cost)} />
+        </dl>
+      </section>
+
+      {place.decisionNote || place.notes ? (
+        <section className="grid gap-2 rounded-[20px] border border-[#e3eaf1] bg-[#fbfcfd] p-3.5" aria-labelledby={`${place.id}-notes`}>
+          <h3 id={`${place.id}-notes`} className="text-xs font-black uppercase tracking-[0.12em] text-[#667483]">Why go</h3>
+          {place.decisionNote ? <p className="text-sm leading-snug text-[#344252]">{place.decisionNote}</p> : null}
+          {place.notes ? <p className="text-sm leading-snug text-[#51606f]">{place.notes}</p> : null}
+        </section>
+      ) : null}
+
+      <section className="grid gap-2" aria-labelledby={`${place.id}-practical`}>
+        <h3 id={`${place.id}-practical`} className="text-xs font-black uppercase tracking-[0.12em] text-[#667483]">Practical details</h3>
+        <dl className="grid gap-2 rounded-[20px] border border-[#e3eaf1] bg-white p-3.5">
+          {detail('Calls', formatBoolean(place.callFriendly, 'Call-friendly', 'Not ideal for calls'))}
+          {detail('Laptop policy', formatLaptopPolicy(place.laptopPolicy))}
+          {detail('Seating comfort', formatQuality(place.seatingComfort))}
+          {detail('Toilet', formatBoolean(place.toiletAvailable, 'Available', 'Not confirmed'))}
+          {detail('Outdoor seating', formatBoolean(place.outdoorSeating, 'Available', 'Not available'))}
+          {place.openingHours ? detail('Opening hours', place.openingHours) : detail('Opening hours', 'Needs verification')}
+          {place.address ? detail('Address', place.address) : null}
+        </dl>
+      </section>
+
+      <section className="grid gap-2" aria-labelledby={`${place.id}-trust`}>
+        <h3 id={`${place.id}-trust`} className="text-xs font-black uppercase tracking-[0.12em] text-[#667483]">Trust signal</h3>
+        <dl className="grid grid-cols-1 gap-2 rounded-[20px] border border-[#e3eaf1] bg-white p-3.5 min-[390px]:grid-cols-2">
+          {detail('Last checked', place.lastChecked || 'Needs check')}
+          {detail('Verified by', place.verifiedBy || 'Community submitted')}
+          {detail('Added by', place.addedBy || 'Local contributor')}
+        </dl>
+      </section>
+
+      <div className="sticky bottom-0 z-10 -mx-0.5 mt-1 grid grid-cols-2 gap-2 border-t border-[#e8eef4] bg-white/95 pt-3 pb-1 backdrop-blur desktop:static desktop:border-0 desktop:bg-transparent desktop:p-0">
+        {place.website ? <a className={`${PRIMARY_PILL} min-h-12`} href={place.website} target="_blank" rel="noreferrer">{primaryPlaceActionLabel(place.website)}</a> : null}
+        <a className={`${place.website ? SECONDARY_PILL : PRIMARY_PILL} min-h-12`} href={contributionUrl('confirm', place)} target="_blank" rel="noreferrer">Still good?</a>
+        <a className={`${SECONDARY_PILL} min-h-12 ${place.website ? 'col-span-2' : ''}`} href={contributionUrl('update', place)} target="_blank" rel="noreferrer">Update info</a>
       </div>
     </article>
   );
 }
 
-function BadgeRow({ badges }) {
+function DetailMetric({ label, tone, value }) {
+  const toneClass = {
+    good: 'border-[#bce7d6] bg-[#effbf6] text-[#006b55]',
+    neutral: 'border-[#dce5ee] bg-[#f7fafc] text-[#344252]',
+    bad: 'border-[#f1cfc9] bg-[#fff6f3] text-[#b42318]',
+    unknown: 'border-[#e3e8ef] bg-[#f8fafc] text-[#667483]',
+  }[tone] || 'border-[#e3e8ef] bg-[#f8fafc] text-[#667483]';
+
+  return (
+    <div className={`rounded-[18px] border p-3 ${toneClass}`}>
+      <dt className="text-[0.66rem] font-black uppercase tracking-[0.1em] opacity-70">{label}</dt>
+      <dd className="mt-1 text-base font-black capitalize leading-tight">{value}</dd>
+    </div>
+  );
+}
+
+function BadgeRow({ badges, limit }) {
   if (!badges?.length) {
     return null;
   }
 
+  const visibleBadges = limit ? badges.slice(0, limit) : badges;
+  const hiddenCount = limit ? badges.length - visibleBadges.length : 0;
+
   return (
     <span className="flex flex-wrap gap-1.5">
-      {badges.map((badge) => (
+      {visibleBadges.map((badge) => (
         <span className="rounded-full bg-[#006cff]/10 px-2 py-0.5 text-xs font-extrabold text-[#006cff]" key={badge}>{badge}</span>
       ))}
+      {hiddenCount > 0 ? <span className="rounded-full bg-[#eef3f7] px-2 py-0.5 text-xs font-extrabold text-[#51606f]">+{hiddenCount}</span> : null}
     </span>
   );
 }
@@ -664,17 +782,24 @@ function markerLabel(place) {
   return place.category?.slice(0, 2) || 'Go';
 }
 
-function formatCardAttributes(place) {
-  return [
-    `Wi-Fi: ${formatQuality(place.wifiQuality).toLowerCase()}`,
-    `Outlets: ${formatAvailability(place.outletAvailability).toLowerCase()}`,
-    `Noise: ${formatQuality(place.noiseLevel).toLowerCase()}`,
-    `Calls: ${formatBoolean(place.callFriendly, 'ok', 'not ideal').toLowerCase()}`,
-  ].join(' / ');
-}
-
 function formatQuality(value) {
   return formatValue(value || 'unknown');
+}
+
+function metricTone(value) {
+  if (['free', 'good', 'great', 'low', 'many', 'quiet', 'some'].includes(value)) {
+    return 'good';
+  }
+
+  if (['high', 'loud', 'none', 'poor'].includes(value)) {
+    return 'bad';
+  }
+
+  if (!value || value === 'unknown') {
+    return 'unknown';
+  }
+
+  return 'neutral';
 }
 
 function formatAvailability(value) {
@@ -703,6 +828,10 @@ function formatPrice(priceLevel, cost) {
 
 function formatCost(value) {
   return formatValue(value || 'unknown');
+}
+
+function primaryPlaceActionLabel(url) {
+  return url.includes('google.com/maps') || url.includes('maps.app.goo.gl') ? 'Open map' : 'Website';
 }
 
 function formatBoolean(value, yesLabel, noLabel) {
