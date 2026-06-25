@@ -1,7 +1,8 @@
 import { OverpassResponse, OverpassElement, Place } from '../types.js';
 
-// Italy bounding box: [south, west, north, east]
-const ITALY_BBOX = '43.6,6.6,47.6,12.6';
+// Milan bounding box: [south, west, north, east] - wider for testing
+// Covers Milan and surrounding areas
+const MILAN_BBOX = '45.2,8.8,45.7,9.4';
 const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
 const TIMEOUT = 180;
 
@@ -9,7 +10,7 @@ export async function fetchFromOverpass(): Promise<Place[]> {
   const query = buildQuery();
 
   console.log('Fetching from Overpass API...');
-  console.log(`Query: ${query.substring(0, 100)}...`);
+  console.log(`Query size: ${query.length} bytes`);
 
   try {
     const controller = new AbortController();
@@ -17,6 +18,10 @@ export async function fetchFromOverpass(): Promise<Place[]> {
 
     const response = await fetch(OVERPASS_URL, {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/osm3s',
+        'User-Agent': 'MilanRemoteWorkMap/2.0',
+      },
       body: query,
       signal: controller.signal,
     });
@@ -24,6 +29,8 @@ export async function fetchFromOverpass(): Promise<Place[]> {
     clearTimeout(timeoutId);
 
     if (!response.ok) {
+      const text = await response.text();
+      console.error(`Response body: ${text.substring(0, 200)}`);
       throw new Error(`Overpass API error: ${response.status} ${response.statusText}`);
     }
 
@@ -40,9 +47,9 @@ export async function fetchFromOverpass(): Promise<Place[]> {
 function buildQuery(): string {
   return `[timeout:${TIMEOUT}][out:json];
 (
-  node["laptop"="yes"](${ITALY_BBOX});
-  way["laptop"="yes"](${ITALY_BBOX});
-  relation["laptop"="yes"](${ITALY_BBOX});
+  node["laptop"="yes"](${MILAN_BBOX});
+  way["laptop"="yes"](${MILAN_BBOX});
+  relation["laptop"="yes"](${MILAN_BBOX});
 );
 out center;`;
 }
