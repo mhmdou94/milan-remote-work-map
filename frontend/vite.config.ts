@@ -1,0 +1,18 @@
+import { defineConfig } from 'vite';
+
+export default defineConfig({
+  root: './src',
+  server: {
+    port: 5173,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+    },
+  },
+  build: {
+    target: 'ES2020',
+    outDir: '../dist',
+  },
+});

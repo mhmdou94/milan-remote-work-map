@@ -1,6 +1,34 @@
+# Dependencies
+node_modules
+/.pnp
+.pnp.js
+
+# Build output
+/dist
+/build
 .next/
-node_modules/
-data/*.sqlite
-data/*.sqlite-*
-.env*.local
+
+# Database
+*.sqlite
+*.sqlite3
+*.sqlite-*
+
+# Misc
+.DS_Store
+.env
+.env.local
+.env.*.local
+
+# Logs
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs
+*.log
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
