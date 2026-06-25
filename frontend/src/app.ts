@@ -26,17 +26,26 @@ export class RemoteWorkApp extends LitElement {
     }
   `;
 
-  @property() center = { lat: 45.4642, lon: 9.19 }; // Milan
-  @state() places: Place[] = [];
-  @state() selectedPlace: Place | null = null;
-  @state() currentPage: 'map' | 'contribute' | 'about' = 'map';
-  @state() filters = {
-    internetAccess: false,
-    sockets: false,
-    openNow: false,
-  };
+  @property() center: { lat: number; lon: number };
+  @state() places: Place[];
+  @state() selectedPlace: Place | null;
+  @state() currentPage: 'map' | 'contribute' | 'about';
+  @state() filters: { internetAccess: boolean; sockets: boolean; openNow: boolean };
 
   private mapComponent: MapComponent | null = null;
+
+  constructor() {
+    super();
+    this.center = { lat: 45.4642, lon: 9.19 }; // Milan
+    this.places = [];
+    this.selectedPlace = null;
+    this.currentPage = 'map';
+    this.filters = {
+      internetAccess: false,
+      sockets: false,
+      openNow: false,
+    };
+  }
 
   render() {
     return html`

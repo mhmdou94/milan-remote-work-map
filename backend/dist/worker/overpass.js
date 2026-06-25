@@ -6,10 +6,11 @@ const TIMEOUT = 180;
 export async function fetchFromOverpass() {
     const query = buildQuery();
     console.log('Fetching from Overpass API...');
-    console.log(`Query size: ${query.length} bytes`);
+    console.log(`Query:\n${query}\n`);
     try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), TIMEOUT * 1000);
+        console.log('📡 Sending request to Overpass API...');
         const response = await fetch(OVERPASS_URL, {
             method: 'POST',
             headers: {
@@ -22,11 +23,19 @@ export async function fetchFromOverpass() {
         clearTimeout(timeoutId);
         if (!response.ok) {
             const text = await response.text();
-            console.error(`Response body: ${text.substring(0, 200)}`);
+            console.error(`Response status: ${response.status}`);
+            console.error(`Response body: ${text.substring(0, 500)}`);
             throw new Error(`Overpass API error: ${response.status} ${response.statusText}`);
         }
+        console.log('✓ Response OK, parsing JSON...');
         const data = (await response.json());
         console.log(`✓ Fetched ${data.elements.length} elements from Overpass`);
+        if (data.elements.length === 0) {
+            console.log('⚠️  No elements found. This could mean:');
+            console.log('  - Data not yet indexed in Overpass (wait 5-60 mins)');
+            console.log('  - Places outside bbox');
+            console.log('  - Tag not yet in Overpass');
+        }
         return parseElements(data.elements);
     }
     catch (error) {
