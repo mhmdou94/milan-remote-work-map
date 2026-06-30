@@ -73,6 +73,15 @@ export class MapComponent extends LitElement {
       box-shadow: none;
     }
 
+    .emoji-marker.not-allowed {
+      border-color: var(--color-danger, #b42318);
+      filter: grayscale(0.6);
+    }
+
+    .emoji-marker.restricted {
+      border-color: #b26a00;
+    }
+
     .empty-state {
       position: absolute;
       top: 72px;
@@ -342,8 +351,14 @@ export class MapComponent extends LitElement {
 
   private createMarkerIcon(place: Place): L.DivIcon {
     const { emoji, color } = getCategoryInfo(place.category);
+    const statusClass =
+      place.laptopStatus === 'no'
+        ? ' not-allowed'
+        : place.laptopStatus === 'restricted'
+          ? ' restricted'
+          : '';
     return L.divIcon({
-      html: `<div class="emoji-marker${place.deletedAt ? ' deleted' : ''}" style="--marker-color:${color}">${emoji}</div>`,
+      html: `<div class="emoji-marker${place.deletedAt ? ' deleted' : ''}${statusClass}" style="--marker-color:${color}">${emoji}</div>`,
       className: '',
       iconSize: [34, 34],
       iconAnchor: [17, 17],
@@ -358,6 +373,8 @@ export class MapComponent extends LitElement {
         <strong style="font-size: 14px; color: #17212b;">${place.name}</strong>
         <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: ${color}; margin-top: 2px;">${label}</div>
         ${place.address ? `<div style="font-size: 12px; color: #51606f; margin-top: 4px;">${place.address}</div>` : ''}
+        ${place.laptopStatus === 'no' ? `<div style="font-size: 12px; color: #b42318; margin-top: 6px; font-weight: 600;">🚫 Not laptop-friendly</div>` : ''}
+        ${place.laptopStatus === 'restricted' ? `<div style="font-size: 12px; color: #b26a00; margin-top: 6px; font-weight: 600;">⚠️ Laptop use restricted</div>` : ''}
         ${place.deletedAt ? `<div style="font-size: 12px; color: #b42318; margin-top: 6px; font-weight: 600;">⚠️ No longer marked laptop-friendly on OSM</div>` : ''}
       </div>
     `;

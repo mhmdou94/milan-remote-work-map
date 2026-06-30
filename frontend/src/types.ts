@@ -9,6 +9,7 @@ export interface Place {
   internetAccess?: 'yes' | 'no' | 'wired';
   sockets?: 'yes' | 'no' | 'many';
   openingHours?: string;
+  laptopStatus?: 'yes' | 'no' | 'restricted';
   laptopConditional?: string;
   wifiSsid?: string;
   wifiFee?: 'yes' | 'no' | 'customers';

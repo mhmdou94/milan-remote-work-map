@@ -9,7 +9,17 @@ import { Place } from '../types.js';
 
 const execFileAsync = promisify(execFile);
 
-const TAGS_FILTER_EXPRESSIONS = ['n/laptop=yes', 'w/laptop=yes', 'r/laptop=yes'];
+const TAGS_FILTER_EXPRESSIONS = [
+  'n/laptop=yes',
+  'w/laptop=yes',
+  'r/laptop=yes',
+  'n/laptop=no',
+  'w/laptop=no',
+  'r/laptop=no',
+  'n/laptop=restricted',
+  'w/laptop=restricted',
+  'r/laptop=restricted',
+];
 
 interface OsmiumFeature extends Feature {
   geometry: Geometry;
@@ -63,7 +73,8 @@ export async function extractPlacesFromPbf(pbfPath: string): Promise<Place[]> {
 function featureToPlace(feature: OsmiumFeature): Place | null {
   const { '@type': osmType, '@id': osmIdNum, ...tags } = feature.properties;
 
-  if (tags.laptop !== 'yes' || !osmType || osmIdNum === undefined) {
+  const laptopStatus = normalizeLaptopStatus(tags.laptop);
+  if (!laptopStatus || !osmType || osmIdNum === undefined) {
     return null;
   }
 
@@ -85,6 +96,7 @@ function featureToPlace(feature: OsmiumFeature): Place | null {
     internetAccess: normalizeInternetAccess(tags.internet_access),
     sockets: normalizeSockets(tags.sockets ?? tags.socket ?? tags.power_supply),
     openingHours: tags.opening_hours,
+    laptopStatus,
     laptopConditional: tags['laptop:conditional'],
     wifiSsid: tags['internet_access:ssid'],
     wifiFee: normalizeWifiFee(tags['internet_access:fee']),
@@ -147,6 +159,13 @@ export function normalizeSockets(value: string | undefined): 'yes' | 'no' | 'man
   if (lower === 'yes' || lower === 'true') return 'yes';
   if (lower === 'many' || lower === 'lots') return 'many';
   if (lower === 'no' || lower === 'false') return 'no';
+  return undefined;
+}
+
+function normalizeLaptopStatus(value: string | undefined): 'yes' | 'no' | 'restricted' | undefined {
+  if (!value) return undefined;
+  const lower = value.toLowerCase();
+  if (lower === 'yes' || lower === 'no' || lower === 'restricted') return lower;
   return undefined;
 }
 

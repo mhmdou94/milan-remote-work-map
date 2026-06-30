@@ -336,6 +336,12 @@ export class ListPage extends LitElement {
                 ${place.address ? html`<div class="result-address">${place.address}</div>` : ''}
               </span>
               <span class="result-badges">
+                ${place.laptopStatus === 'no'
+                  ? html`<span title="Not laptop-friendly">🚫</span>`
+                  : ''}
+                ${place.laptopStatus === 'restricted'
+                  ? html`<span title="Laptop use restricted">⚠️</span>`
+                  : ''}
                 ${place.internetAccess === 'yes'
                   ? html`<span title="Internet access">📶</span>`
                   : ''}

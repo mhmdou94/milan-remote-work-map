@@ -299,6 +299,15 @@ export class PlaceDetailModal extends LitElement {
       font-weight: 600;
     }
 
+    .not-allowed-notice {
+      background: #fdecea;
+      color: var(--color-danger, #b42318);
+      padding: 10px 12px;
+      border-radius: var(--radius-md, 14px);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
     .restriction-notice {
       background: #fff3e0;
       color: #b26a00;
@@ -557,10 +566,16 @@ export class PlaceDetailModal extends LitElement {
                 </div>
               `
             : ''}
-          ${this.place.laptopConditional
+          ${this.place.laptopStatus === 'no'
+            ? html` <div class="not-allowed-notice">🚫 Laptop use is not allowed here</div> `
+            : ''}
+          ${this.place.laptopStatus === 'restricted'
             ? html`
                 <div class="restriction-notice">
-                  ⚠️ Laptop use restricted: <code>${this.place.laptopConditional}</code>
+                  ⚠️ Laptop use
+                  restricted${this.place.laptopConditional
+                    ? html`: <code>${this.place.laptopConditional}</code>`
+                    : ''}
                 </div>
               `
             : ''}

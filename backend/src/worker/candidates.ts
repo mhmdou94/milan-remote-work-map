@@ -87,7 +87,13 @@ export async function extractCandidatesFromPbf(pbfPath: string): Promise<PlaceCa
 function featureToCandidate(feature: OsmiumFeature): PlaceCandidate | null {
   const { '@type': osmType, '@id': osmIdNum, ...tags } = feature.properties;
 
-  if (tags.laptop === 'yes' || tags.laptop === 'no' || !osmType || osmIdNum === undefined) {
+  if (
+    tags.laptop === 'yes' ||
+    tags.laptop === 'no' ||
+    tags.laptop === 'restricted' ||
+    !osmType ||
+    osmIdNum === undefined
+  ) {
     return null;
   }
 

@@ -31,6 +31,7 @@ function toStagedPlace(place: Place): StagedPlace {
     internetAccess: place.internetAccess,
     sockets: place.sockets,
     openingHours: place.openingHours,
+    laptopStatus: place.laptopStatus,
     laptopConditional: place.laptopConditional,
     wifiSsid: place.wifiSsid,
     wifiFee: place.wifiFee,
@@ -75,7 +76,7 @@ async function syncPlaces(): Promise<void> {
       console.log(`\n📍 Region: ${region.name}`);
       const pbfPath = await downloadPbf(region);
 
-      console.log(`  🔍 Extracting laptop=yes places with osmium...`);
+      console.log(`  🔍 Extracting laptop=yes/no/restricted places with osmium...`);
       const fetched = await extractPlacesFromPbf(pbfPath);
       console.log(`  📦 Staging ${fetched.length} places from ${region.name}...`);
 
@@ -128,6 +129,7 @@ async function syncPlaces(): Promise<void> {
           internetAccess: stagedPlace.internetAccess,
           sockets: stagedPlace.sockets,
           openingHours: stagedPlace.openingHours,
+          laptopStatus: stagedPlace.laptopStatus,
           laptopConditional: stagedPlace.laptopConditional,
           wifiSsid: stagedPlace.wifiSsid,
           wifiFee: stagedPlace.wifiFee,
@@ -167,6 +169,7 @@ async function syncPlaces(): Promise<void> {
         internetAccess: stagedPlace.internetAccess,
         sockets: stagedPlace.sockets,
         openingHours: stagedPlace.openingHours,
+        laptopStatus: stagedPlace.laptopStatus,
         address: stagedPlace.address,
         city: stagedPlace.city,
         wheelchair: stagedPlace.wheelchair,
@@ -197,7 +200,7 @@ async function syncPlaces(): Promise<void> {
     let prunedTransitCount = 0;
     let prunedCandidateCount = 0;
     if (activeRegions.length === PBF_REGIONS.length) {
-      console.log(`\n🗑️  Soft-deleting places no longer tagged laptop=yes in OSM...`);
+      console.log(`\n🗑️  Soft-deleting places no longer tagged with a laptop status in OSM...`);
       const removedIds = await softDeleteMissingOsmPlaces(
         db,
         staged.map((s) => s.osmId),

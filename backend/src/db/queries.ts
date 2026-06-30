@@ -19,6 +19,7 @@ interface PlaceRow {
   internet_access: string | null;
   sockets: string | null;
   opening_hours: string | null;
+  laptop_status: string | null;
   laptop_conditional: string | null;
   wifi_ssid: string | null;
   wifi_fee: string | null;
@@ -61,6 +62,7 @@ interface StagingRow {
   internet_access: string | null;
   sockets: string | null;
   opening_hours: string | null;
+  laptop_status: string | null;
   laptop_conditional: string | null;
   wifi_ssid: string | null;
   wifi_fee: string | null;
@@ -98,6 +100,7 @@ function rowToPlace(row: PlaceRow): Place {
     internetAccess: (row.internet_access as Place['internetAccess']) ?? undefined,
     sockets: (row.sockets as Place['sockets']) ?? undefined,
     openingHours: row.opening_hours ?? undefined,
+    laptopStatus: (row.laptop_status as Place['laptopStatus']) ?? undefined,
     laptopConditional: row.laptop_conditional ?? undefined,
     wifiSsid: row.wifi_ssid ?? undefined,
     wifiFee: (row.wifi_fee as Place['wifiFee']) ?? undefined,
@@ -142,6 +145,7 @@ function rowToStaged(row: StagingRow): StagedPlace {
     internetAccess: (row.internet_access as StagedPlace['internetAccess']) ?? undefined,
     sockets: (row.sockets as StagedPlace['sockets']) ?? undefined,
     openingHours: row.opening_hours ?? undefined,
+    laptopStatus: (row.laptop_status as StagedPlace['laptopStatus']) ?? undefined,
     laptopConditional: row.laptop_conditional ?? undefined,
     wifiSsid: row.wifi_ssid ?? undefined,
     wifiFee: (row.wifi_fee as StagedPlace['wifiFee']) ?? undefined,
@@ -225,6 +229,7 @@ export async function insertPlace(db: Knex, place: Place): Promise<void> {
     internet_access: place.internetAccess || null,
     sockets: place.sockets || null,
     opening_hours: place.openingHours || null,
+    laptop_status: place.laptopStatus || null,
     laptop_conditional: place.laptopConditional || null,
     wifi_ssid: place.wifiSsid || null,
     wifi_fee: place.wifiFee || null,
@@ -268,6 +273,7 @@ export async function updatePlace(
   if (updates.internetAccess !== undefined) row.internet_access = updates.internetAccess || null;
   if (updates.sockets !== undefined) row.sockets = updates.sockets || null;
   if (updates.openingHours !== undefined) row.opening_hours = updates.openingHours || null;
+  if (updates.laptopStatus !== undefined) row.laptop_status = updates.laptopStatus || null;
   if (updates.laptopConditional !== undefined) {
     row.laptop_conditional = updates.laptopConditional || null;
   }
@@ -349,6 +355,7 @@ export async function insertStaged(
     internet_access: staged.internetAccess || null,
     sockets: staged.sockets || null,
     opening_hours: staged.openingHours || null,
+    laptop_status: staged.laptopStatus || null,
     laptop_conditional: staged.laptopConditional || null,
     wifi_ssid: staged.wifiSsid || null,
     wifi_fee: staged.wifiFee || null,
