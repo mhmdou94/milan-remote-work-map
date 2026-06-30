@@ -34,16 +34,28 @@ npm run dev --workspace=backend
 
 ## Worker
 
-Fetch and sync places from OSM Overpass API:
+Sync places from Geofabrik OSM PBF extracts (requires `osmium-tool`:
+`sudo apt-get install -y osmium-tool`):
 
 ```bash
 npm run worker
 ```
 
-This will:
-1. Fetch places with `laptop=yes` from Italy
-2. Store them in SQLite
-3. Serve via REST API at `GET /api/places?bbox=...`
+This will, for each configured Italy region (`nord-ovest`, `nord-est`,
+`centro`, `sud`, `isole`):
+1. Download the region's `.osm.pbf` extract into `pbf/` (skipped if already cached)
+2. Filter it down to `laptop=yes` nodes/ways/relations with `osmium tags-filter`
+3. Export to GeoJSON with `osmium export` and normalize tags into places
+4. Upsert into SQLite, then serve via REST API at `GET /api/places?bbox=...`
+
+To sync a subset of regions (e.g. while testing), set `PBF_REGIONS`:
+
+```bash
+PBF_REGIONS=nord-ovest npm run worker --workspace=backend
+```
+
+Note: a partial-region run skips the soft-delete reconciliation step, since
+it doesn't represent the full OSM dataset.
 
 ## API
 
@@ -66,7 +78,7 @@ http://localhost:3000/api/places?bbox=45.3,9.0,45.6,9.4&internet_access=yes
 
 - **Frontend**: Vite + LitElement + Leaflet
 - **Backend**: Express + SQLite + TypeScript
-- **Data**: OpenStreetMap (Overpass API)
+- **Data**: OpenStreetMap (Geofabrik PBF extracts via osmium-tool)
 
 ## Project Structure
 

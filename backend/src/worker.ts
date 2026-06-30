@@ -1,5 +1,7 @@
 import { initDb, closeDb } from './db/init.js';
-import { fetchFromOverpass } from './worker/overpass.js';
+import { downloadPbf } from './worker/download.js';
+import { extractPlacesFromPbf } from './worker/pbf.js';
+import { resolveActiveRegions, PBF_REGIONS } from './worker/regions.js';
 import {
   clearStaging,
   insertStaged,
@@ -19,9 +21,14 @@ function toStagedPlace(place: Place): StagedPlace {
     latitude: place.latitude,
     longitude: place.longitude,
     address: place.address,
+    city: place.city,
     internetAccess: place.internetAccess,
     sockets: place.sockets,
     openingHours: place.openingHours,
+    laptopConditional: place.laptopConditional,
+    wifiSsid: place.wifiSsid,
+    wifiFee: place.wifiFee,
+    wifiPassword: place.wifiPassword,
     osmTags: place.osmTags,
   };
 }
@@ -30,22 +37,32 @@ async function syncPlaces(): Promise<void> {
   const db = await initDb();
 
   try {
-    console.log('\n🔄 Starting place sync from OSM...\n');
+    console.log('\n🔄 Starting place sync from Geofabrik PBF extracts...\n');
 
-    console.log('📥 Fetching places from Overpass API...');
-    const fetched = await fetchFromOverpass();
+    const activeRegions = resolveActiveRegions(process.env.PBF_REGIONS);
     const now = new Date().toISOString();
 
-    console.log(`\n📦 Staging ${fetched.length} fetched places...`);
     await clearStaging(db);
-    for (const place of fetched) {
-      if (!place.osmId) continue;
-      await insertStaged(db, toStagedPlace(place), now);
+
+    let totalFetched = 0;
+    for (const region of activeRegions) {
+      console.log(`\n📍 Region: ${region.name}`);
+      const pbfPath = await downloadPbf(region);
+
+      console.log(`  🔍 Extracting laptop=yes places with osmium...`);
+      const fetched = await extractPlacesFromPbf(pbfPath);
+      console.log(`  📦 Staging ${fetched.length} places from ${region.name}...`);
+
+      for (const place of fetched) {
+        if (!place.osmId) continue;
+        await insertStaged(db, toStagedPlace(place), now);
+      }
+      totalFetched += fetched.length;
     }
 
     const staged = await getAllStaged(db);
 
-    console.log(`\n🔀 Reconciling staged places with the database...`);
+    console.log(`\n🔀 Reconciling ${staged.length} staged places with the database...`);
     let inserted = 0;
     let updated = 0;
     let restored = 0;
@@ -61,9 +78,14 @@ async function syncPlaces(): Promise<void> {
           latitude: stagedPlace.latitude,
           longitude: stagedPlace.longitude,
           address: stagedPlace.address,
+          city: stagedPlace.city,
           internetAccess: stagedPlace.internetAccess,
           sockets: stagedPlace.sockets,
           openingHours: stagedPlace.openingHours,
+          laptopConditional: stagedPlace.laptopConditional,
+          wifiSsid: stagedPlace.wifiSsid,
+          wifiFee: stagedPlace.wifiFee,
+          wifiPassword: stagedPlace.wifiPassword,
           osmId: stagedPlace.osmId,
           osmTags: stagedPlace.osmTags,
           source: 'osm',
@@ -83,6 +105,7 @@ async function syncPlaces(): Promise<void> {
         sockets: stagedPlace.sockets,
         openingHours: stagedPlace.openingHours,
         address: stagedPlace.address,
+        city: stagedPlace.city,
         osmTags: stagedPlace.osmTags,
         lastSynced: now,
         deletedAt: null,
@@ -90,18 +113,27 @@ async function syncPlaces(): Promise<void> {
       updated++;
     }
 
-    console.log(`\n🗑️  Soft-deleting places no longer tagged laptop=yes in OSM...`);
-    const removedIds = await softDeleteMissingOsmPlaces(
-      db,
-      staged.map((s) => s.osmId),
-      now
-    );
+    let removedCount = 0;
+    if (activeRegions.length === PBF_REGIONS.length) {
+      console.log(`\n🗑️  Soft-deleting places no longer tagged laptop=yes in OSM...`);
+      const removedIds = await softDeleteMissingOsmPlaces(
+        db,
+        staged.map((s) => s.osmId),
+        now
+      );
+      removedCount = removedIds.length;
+    } else {
+      console.log(
+        `\n⚠️  Skipping soft-delete: partial region sync (${activeRegions.map((r) => r.name).join(', ')}) ` +
+          `doesn't cover the full OSM universe, so missing places elsewhere don't mean they were removed.`
+      );
+    }
 
     await closeDb(db);
 
     console.log(`\n✅ Sync complete!`);
     console.log(
-      `   ${inserted} new, ${updated} updated (${restored} restored), ${removedIds.length} soft-deleted`
+      `   ${inserted} new, ${updated} updated (${restored} restored), ${removedCount} soft-deleted (${totalFetched} fetched)`
     );
     console.log(`📍 API ready: http://localhost:3000/api/places?bbox=45.3,9.0,45.6,9.4\n`);
   } catch (error) {

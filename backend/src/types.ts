@@ -61,31 +61,3 @@ export interface GeoJSONCollection {
   type: 'FeatureCollection';
   features: GeoJSONFeature[];
 }
-
-export interface OverpassNode {
-  type: 'node';
-  id: number;
-  lat: number;
-  lon: number;
-  tags: Record<string, string>;
-}
-
-export interface OverpassWay {
-  type: 'way';
-  id: number;
-  center?: { lat: number; lon: number };
-  tags: Record<string, string>;
-}
-
-export interface OverpassElement {
-  type: 'node' | 'way' | 'relation';
-  id: number;
-  lat?: number;
-  lon?: number;
-  center?: { lat: number; lon: number };
-  tags: Record<string, string>;
-}
-
-export interface OverpassResponse {
-  elements: OverpassElement[];
-}

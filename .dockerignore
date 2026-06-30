@@ -1,0 +1,10 @@
+node_modules
+backend/dist
+frontend/dist
+backend/data
+pbf
+.git
+.reference
+e2e
+*.sqlite
+*.sqlite3
