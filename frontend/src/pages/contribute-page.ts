@@ -56,6 +56,86 @@ const TAGS_USED = [
     purpose: 'Powers the city dropdown on the List page.',
     wikiUrl: `${WIKI}Key:addr:city`,
   },
+  {
+    key: 'wheelchair',
+    purpose: 'Accessibility info, shown as an amenity badge in place details.',
+    wikiUrl: `${WIKI}Key:wheelchair`,
+  },
+  {
+    key: 'air_conditioning',
+    purpose: 'Shown as an amenity badge — useful for long work sessions in summer.',
+    wikiUrl: `${WIKI}Key:air_conditioning`,
+  },
+  {
+    key: 'indoor_seating',
+    purpose: 'Shown as an amenity badge.',
+    wikiUrl: `${WIKI}Key:indoor_seating`,
+  },
+  {
+    key: 'outdoor_seating',
+    purpose: 'Shown as an amenity badge.',
+    wikiUrl: `${WIKI}Key:outdoor_seating`,
+  },
+  {
+    key: 'smoking',
+    purpose: 'Smoking policy, shown as an amenity badge.',
+    wikiUrl: `${WIKI}Key:smoking`,
+  },
+  {
+    key: 'level',
+    purpose: 'Floor shown as an amenity badge — handy for multi-floor buildings.',
+    wikiUrl: `${WIKI}Key:level`,
+  },
+  {
+    key: 'phone / contact:phone',
+    purpose: 'Powers the "Call" link in place details.',
+    wikiUrl: `${WIKI}Key:phone`,
+  },
+  {
+    key: 'website / contact:website',
+    purpose: 'Powers the "Visit website" link in place details.',
+    wikiUrl: `${WIKI}Key:website`,
+  },
+  {
+    key: 'fee',
+    purpose: 'Whether a fee applies to enter or use the place (e.g. coworking spaces).',
+    wikiUrl: `${WIKI}Key:fee`,
+  },
+  {
+    key: 'charge',
+    purpose: 'Price/cost text shown alongside the fee badge when available.',
+    wikiUrl: `${WIKI}Key:charge`,
+  },
+  {
+    key: 'reservation',
+    purpose: 'Whether booking ahead is required, recommended, or unnecessary.',
+    wikiUrl: `${WIKI}Key:reservation`,
+  },
+  {
+    key: 'capacity',
+    purpose: 'Seat/desk count, shown as an amenity badge.',
+    wikiUrl: `${WIKI}Key:capacity`,
+  },
+  {
+    key: 'brand / operator',
+    purpose: 'Chain or operator name, shown as an amenity badge.',
+    wikiUrl: `${WIKI}Key:brand`,
+  },
+  {
+    key: 'drinking_water',
+    purpose: 'Whether free drinking water is available.',
+    wikiUrl: `${WIKI}Key:drinking_water`,
+  },
+  {
+    key: 'toilets / toilets:wheelchair',
+    purpose: 'Whether toilets, and accessible toilets, are available.',
+    wikiUrl: `${WIKI}Key:toilets`,
+  },
+  {
+    key: 'dog',
+    purpose: 'Whether dogs are allowed, shown as an amenity badge.',
+    wikiUrl: `${WIKI}Key:dog`,
+  },
 ];
 
 export class ContributePage extends LitElement {
