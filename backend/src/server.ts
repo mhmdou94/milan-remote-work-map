@@ -1,6 +1,9 @@
 import express from 'express';
 import { initDb, closeDb } from './db/init.js';
 import { createPlacesRoute, createCitiesRoute } from './api/places.js';
+import { createNearbyTransitRoute } from './api/transit.js';
+import { createCandidatesRoute } from './api/candidates.js';
+import { createPlaceByIdRoute } from './api/place-detail.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -24,7 +27,10 @@ async function start() {
   });
 
   app.get('/api/places', createPlacesRoute(db));
+  app.get('/api/places/candidates', createCandidatesRoute(db));
+  app.get('/api/places/:id', createPlaceByIdRoute(db));
   app.get('/api/cities', createCitiesRoute(db));
+  app.get('/api/transit/nearby', createNearbyTransitRoute(db));
 
   // Start server
   const server = app.listen(PORT, () => {

@@ -57,55 +57,16 @@ PBF_REGIONS=nord-ovest npm run worker --workspace=backend
 Note: a partial-region run skips the soft-delete reconciliation step, since
 it doesn't represent the full OSM dataset.
 
-## API
-
-### GET `/api/places`
-
-Returns GeoJSON FeatureCollection of places.
-
-**Query params:**
-- `bbox=minLat,minLon,maxLat,maxLon` (required)
-- `internet_access=yes` (optional)
-- `sockets=yes` (optional)
-- `open_now=1` (optional)
-
-**Example:**
-```
-http://localhost:3000/api/places?bbox=45.3,9.0,45.6,9.4&internet_access=yes
-```
-
 ## Tech Stack
 
 - **Frontend**: Vite + LitElement + Leaflet
 - **Backend**: Express + SQLite + TypeScript
 - **Data**: OpenStreetMap (Geofabrik PBF extracts via osmium-tool)
 
-## Project Structure
-
-```
-milan-remote-work-map/
-├── frontend/              # Vite + LitElement SPA
-│   ├── src/
-│   │   ├── components/   # LitElement components
-│   │   ├── app.ts        # Root component
-│   │   ├── main.ts       # Entry point
-│   │   └── index.html
-│   └── package.json
-├── backend/              # Express server + Worker
-│   ├── src/
-│   │   ├── api/         # REST endpoints
-│   │   ├── db/          # Database layer
-│   │   ├── worker/      # OSM sync logic
-│   │   ├── server.ts    # Express app
-│   │   └── worker.ts    # Worker CLI
-│   └── package.json
-└── V2.md                 # Specification
-```
 
 ## Future
 
 - [ ] SpatiaLite migration for spatial queries
 - [ ] More OSM tags (wheelchair, quiet, etc.)
-- [ ] Scheduled worker (cron)
 - [ ] Direct editing UI
 - [ ] Localization

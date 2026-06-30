@@ -1,9 +1,19 @@
 import { LitElement, html, css } from 'lit';
 import { property, state } from 'lit/decorators.js';
-import type { Place } from '../types.js';
+import type { Place, TransitStop } from '../types.js';
 import { fetchReviews, submitReview, relativeDate, type MangroveReview } from '../lib/mangrove.js';
+import {
+  fetchNearbyTransit,
+  getTransitKindInfo,
+  dedupeTransitStops,
+  getNavLinks,
+  TRANSIT_KIND_ORDER,
+} from '../lib/transit.js';
+import { googleMapsIcon, appleMapsIcon, osmIcon } from '../lib/icons.js';
 
 const STAR_VALUES = [20, 40, 60, 80, 100];
+const NEARBY_RADIUS_METERS = 500;
+const NEARBY_VISIBLE_PER_KIND = 3;
 
 export class PlaceDetailModal extends LitElement {
   @property() declare place: Place | null;
@@ -16,8 +26,12 @@ export class PlaceDetailModal extends LitElement {
   @state() declare opinion: string;
   @state() declare submitting: boolean;
   @state() declare submitStatus: 'success' | 'error' | null;
+  @state() declare nearbyTransit: TransitStop[];
+  @state() declare nearbyTransitLoading: boolean;
+  @state() declare nearbyExpanded: boolean;
 
   private reviewsAbortController: AbortController | null = null;
+  private nearbyTransitAbortController: AbortController | null = null;
 
   constructor() {
     super();
@@ -30,6 +44,9 @@ export class PlaceDetailModal extends LitElement {
     this.opinion = '';
     this.submitting = false;
     this.submitStatus = null;
+    this.nearbyTransit = [];
+    this.nearbyTransitLoading = true;
+    this.nearbyExpanded = false;
   }
 
   static styles = css`
@@ -158,6 +175,66 @@ export class PlaceDetailModal extends LitElement {
       font-size: 12px;
     }
 
+    .amenity-nav {
+      display: flex;
+      gap: 4px;
+    }
+
+    .nav-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      background: #e8e8e8;
+      border-radius: 4px;
+    }
+
+    .nav-icon:hover {
+      background: #ddd;
+    }
+
+    .nearby-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .nearby-group .amenities {
+      gap: 4px;
+    }
+
+    .nearby-group .amenity {
+      padding: 6px 8px;
+    }
+
+    .nearby-group-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #555;
+    }
+
+    .nearby-more-hint {
+      color: #999;
+      font-size: 11px;
+      margin-left: 4px;
+    }
+
+    .nearby-toggle-btn {
+      align-self: flex-start;
+      background: none;
+      border: none;
+      color: #1976d2;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 4px 0;
+    }
+
+    .nearby-toggle-btn:hover {
+      text-decoration: underline;
+    }
+
     .links {
       display: flex;
       flex-direction: column;
@@ -182,6 +259,21 @@ export class PlaceDetailModal extends LitElement {
 
     .restriction-notice code {
       background: rgba(178, 106, 0, 0.12);
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+
+    .unverified-notice {
+      background: #eef3fc;
+      color: #1f4f8f;
+      padding: 10px 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .unverified-notice code {
+      background: rgba(31, 79, 143, 0.12);
       padding: 1px 4px;
       border-radius: 3px;
     }
@@ -359,6 +451,17 @@ export class PlaceDetailModal extends LitElement {
         </div>
 
         <div class="modal-content">
+          ${this.place.unverified
+            ? html`
+                <div class="unverified-notice">
+                  💡 <strong>Unverified suggestion</strong> — this place isn't confirmed as
+                  laptop-friendly yet. If you've been here, help us out by tagging
+                  <code>laptop=yes</code>, <code>laptop=no</code>, or
+                  <code>laptop:conditional=...</code> on OpenStreetMap so it shows up correctly for
+                  everyone (usually within a day).
+                </div>
+              `
+            : ''}
           ${this.place.deletedAt
             ? html`
                 <div class="removed-notice">
@@ -391,7 +494,7 @@ export class PlaceDetailModal extends LitElement {
                 </div>
               `
             : ''}
-          ${this.renderReviews()} ${this.renderLinks()}
+          ${this.renderNearbyTransit()} ${this.renderReviews()} ${this.renderLinks()}
         </div>
       </div>
     `;
@@ -400,12 +503,14 @@ export class PlaceDetailModal extends LitElement {
   willUpdate(changedProperties: Map<string, unknown>) {
     if (changedProperties.has('place') && this.place) {
       this.loadReviews();
+      this.loadNearbyTransit();
     }
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
     this.reviewsAbortController?.abort();
+    this.nearbyTransitAbortController?.abort();
   }
 
   private async loadReviews() {
@@ -432,6 +537,30 @@ export class PlaceDetailModal extends LitElement {
       if ((err as Error).name !== 'AbortError') this.reviewsError = true;
     } finally {
       if (!controller.signal.aborted) this.reviewsLoading = false;
+    }
+  }
+
+  private async loadNearbyTransit() {
+    if (!this.place) return;
+
+    this.nearbyTransitAbortController?.abort();
+    const controller = new AbortController();
+    this.nearbyTransitAbortController = controller;
+
+    this.nearbyTransitLoading = true;
+    this.nearbyExpanded = false;
+
+    try {
+      this.nearbyTransit = await fetchNearbyTransit(
+        this.place.latitude,
+        this.place.longitude,
+        NEARBY_RADIUS_METERS,
+        controller.signal
+      );
+    } catch (err) {
+      if ((err as Error).name !== 'AbortError') this.nearbyTransit = [];
+    } finally {
+      if (!controller.signal.aborted) this.nearbyTransitLoading = false;
     }
   }
 
@@ -562,6 +691,95 @@ export class PlaceDetailModal extends LitElement {
             decentralized review platform — no account needed.
           </div>
         </div>
+      </div>
+    `;
+  }
+
+  private renderNearbyTransit() {
+    if (this.nearbyTransitLoading) {
+      return html`
+        <div class="modal-section">
+          <div class="modal-section-title">Nearby</div>
+          <small style="color: #999;">Loading nearby transit…</small>
+        </div>
+      `;
+    }
+
+    if (this.nearbyTransit.length === 0) return html``;
+
+    const groups = TRANSIT_KIND_ORDER.map((kind) => ({
+      kind,
+      stops: dedupeTransitStops(this.nearbyTransit.filter((stop) => stop.kind === kind)),
+    })).filter((group) => group.stops.length > 0);
+
+    const hasMore = groups.some((group) => group.stops.length > NEARBY_VISIBLE_PER_KIND);
+
+    return html`
+      <div class="modal-section">
+        <div class="modal-section-title">Nearby (within ${NEARBY_RADIUS_METERS}m)</div>
+        ${groups.map((group) => this.renderNearbyGroup(group))}
+        ${hasMore
+          ? html`
+              <button
+                class="nearby-toggle-btn"
+                @click=${() => (this.nearbyExpanded = !this.nearbyExpanded)}
+              >
+                ${this.nearbyExpanded ? 'Show fewer' : 'Show all'}
+              </button>
+            `
+          : ''}
+      </div>
+    `;
+  }
+
+  private renderNearbyGroup(group: { kind: TransitStop['kind']; stops: TransitStop[] }) {
+    const { icon, label, groupLabel } = getTransitKindInfo(group.kind);
+    const visible = this.nearbyExpanded
+      ? group.stops
+      : group.stops.slice(0, NEARBY_VISIBLE_PER_KIND);
+    const hiddenCount = group.stops.length - visible.length;
+
+    return html`
+      <div class="nearby-group">
+        <div class="nearby-group-title">${icon} ${groupLabel}</div>
+        <div class="amenities">
+          ${visible.map((stop) => {
+            const links = getNavLinks(stop.latitude, stop.longitude);
+            return html`
+              <div class="amenity">
+                <span class="amenity-name">${stop.name || label}</span>
+                <span class="amenity-value">${Math.round(stop.distanceMeters)}m</span>
+                <span class="amenity-nav">
+                  <a
+                    class="nav-icon"
+                    href=${links.googleMaps}
+                    target="_blank"
+                    rel="noopener"
+                    title="Open in Google Maps"
+                    >${googleMapsIcon}</a
+                  >
+                  <a
+                    class="nav-icon"
+                    href=${links.appleMaps}
+                    target="_blank"
+                    rel="noopener"
+                    title="Open in Apple Maps"
+                    >${appleMapsIcon}</a
+                  >
+                  <a
+                    class="nav-icon"
+                    href=${links.osm}
+                    target="_blank"
+                    rel="noopener"
+                    title="Open in OpenStreetMap"
+                    >${osmIcon}</a
+                  >
+                </span>
+              </div>
+            `;
+          })}
+        </div>
+        ${hiddenCount > 0 ? html`<small class="nearby-more-hint">+${hiddenCount} more</small>` : ''}
       </div>
     `;
   }

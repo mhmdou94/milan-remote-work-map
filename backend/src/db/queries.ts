@@ -1,5 +1,12 @@
 import { Knex } from 'knex';
-import { Place, BBox, StagedPlace } from '../types.js';
+import {
+  Place,
+  BBox,
+  StagedPlace,
+  TransitStop,
+  TransitStopWithDistance,
+  PlaceCandidate,
+} from '../types.js';
 
 interface PlaceRow {
   id: string;
@@ -255,11 +262,201 @@ export async function getPlaceByOsmId(db: Knex, osmId: string): Promise<Place | 
   return row ? rowToPlace(row) : null;
 }
 
+export async function getPlaceById(db: Knex, id: string): Promise<Place | null> {
+  const row = await db<PlaceRow>('places').where({ id }).first();
+  return row ? rowToPlace(row) : null;
+}
+
 /**
  * Soft-deletes every osm-sourced place whose osm_id is not present in
  * `activeOsmIds` and that isn't already marked as deleted.
  * Returns the ids of places that were newly soft-deleted.
  */
+interface TransitStopRow {
+  id: string;
+  osm_id: string;
+  kind: string;
+  name: string | null;
+  latitude: number;
+  longitude: number;
+  capacity: string | null;
+  covered: string | null;
+  last_synced: string | null;
+}
+
+function rowToTransitStop(row: TransitStopRow): TransitStop {
+  return {
+    id: row.id,
+    osmId: row.osm_id,
+    kind: row.kind as TransitStop['kind'],
+    name: row.name ?? undefined,
+    latitude: row.latitude,
+    longitude: row.longitude,
+    capacity: row.capacity ?? undefined,
+    covered: row.covered ?? undefined,
+    lastSynced: row.last_synced ?? undefined,
+  };
+}
+
+export async function upsertTransitStop(
+  db: Knex,
+  stop: TransitStop,
+  syncedAt: string
+): Promise<void> {
+  await db<TransitStopRow>('transit_stops')
+    .insert({
+      id: stop.id,
+      osm_id: stop.osmId,
+      kind: stop.kind,
+      name: stop.name || null,
+      latitude: stop.latitude,
+      longitude: stop.longitude,
+      capacity: stop.capacity || null,
+      covered: stop.covered || null,
+      last_synced: syncedAt,
+    })
+    .onConflict('id')
+    .merge();
+}
+
+const EARTH_RADIUS_METERS = 6371000;
+const METERS_PER_DEGREE_LAT = 111320;
+
+function haversineMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return EARTH_RADIUS_METERS * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/**
+ * Hard-deletes every transit stop whose id is not present in `validIds`.
+ * Only meaningful for a full-region sync — a partial run doesn't represent
+ * the full OSM universe, so absence doesn't mean removal. Returns the count
+ * of pruned rows.
+ */
+export async function pruneTransitStops(db: Knex, validIds: Set<string>): Promise<number> {
+  const existingIds = await db<TransitStopRow>('transit_stops').pluck('id');
+  const staleIds = existingIds.filter((id) => !validIds.has(id));
+
+  await db.transaction(async (trx) => {
+    for (const id of staleIds) {
+      await trx<TransitStopRow>('transit_stops').where({ id }).delete();
+    }
+  });
+
+  return staleIds.length;
+}
+
+export async function getNearbyTransitStops(
+  db: Knex,
+  lat: number,
+  lon: number,
+  radiusMeters: number,
+  limit = 30
+): Promise<TransitStopWithDistance[]> {
+  const deltaLat = radiusMeters / METERS_PER_DEGREE_LAT;
+  const deltaLon = radiusMeters / (METERS_PER_DEGREE_LAT * Math.cos((lat * Math.PI) / 180));
+
+  const rows = await db<TransitStopRow>('transit_stops')
+    .whereBetween('latitude', [lat - deltaLat, lat + deltaLat])
+    .andWhereBetween('longitude', [lon - deltaLon, lon + deltaLon]);
+
+  return rows
+    .map((row) => {
+      const stop = rowToTransitStop(row);
+      return { ...stop, distanceMeters: haversineMeters(lat, lon, stop.latitude, stop.longitude) };
+    })
+    .filter((stop) => stop.distanceMeters <= radiusMeters)
+    .sort((a, b) => a.distanceMeters - b.distanceMeters)
+    .slice(0, limit);
+}
+
+interface PlaceCandidateRow {
+  id: string;
+  osm_id: string;
+  name: string;
+  category: string | null;
+  latitude: number;
+  longitude: number;
+  address: string | null;
+  city: string | null;
+  internet_access: string | null;
+  sockets: string | null;
+  osm_tags: string | null;
+  last_synced: string | null;
+}
+
+function rowToCandidate(row: PlaceCandidateRow): PlaceCandidate {
+  return {
+    id: row.id,
+    osmId: row.osm_id,
+    name: row.name,
+    category: row.category ?? undefined,
+    latitude: row.latitude,
+    longitude: row.longitude,
+    address: row.address ?? undefined,
+    city: row.city ?? undefined,
+    internetAccess: (row.internet_access as PlaceCandidate['internetAccess']) ?? undefined,
+    sockets: (row.sockets as PlaceCandidate['sockets']) ?? undefined,
+    osmTags: row.osm_tags ? JSON.parse(row.osm_tags) : undefined,
+    lastSynced: row.last_synced ?? undefined,
+  };
+}
+
+export async function upsertPlaceCandidate(
+  db: Knex,
+  candidate: PlaceCandidate,
+  syncedAt: string
+): Promise<void> {
+  await db<PlaceCandidateRow>('place_candidates')
+    .insert({
+      id: candidate.id,
+      osm_id: candidate.osmId,
+      name: candidate.name,
+      category: candidate.category || null,
+      latitude: candidate.latitude,
+      longitude: candidate.longitude,
+      address: candidate.address || null,
+      city: candidate.city || null,
+      internet_access: candidate.internetAccess || null,
+      sockets: candidate.sockets || null,
+      osm_tags: candidate.osmTags ? JSON.stringify(candidate.osmTags) : null,
+      last_synced: syncedAt,
+    })
+    .onConflict('id')
+    .merge();
+}
+
+export async function getPlaceCandidates(db: Knex, bbox: BBox): Promise<PlaceCandidate[]> {
+  const rows = await db<PlaceCandidateRow>('place_candidates')
+    .whereBetween('latitude', [bbox.minLat, bbox.maxLat])
+    .andWhereBetween('longitude', [bbox.minLon, bbox.maxLon]);
+  return rows.map(rowToCandidate);
+}
+
+export async function getPlaceCandidateById(db: Knex, id: string): Promise<PlaceCandidate | null> {
+  const row = await db<PlaceCandidateRow>('place_candidates').where({ id }).first();
+  return row ? rowToCandidate(row) : null;
+}
+
+/** Same pruning logic as {@link pruneTransitStops}, for place_candidates. */
+export async function prunePlaceCandidates(db: Knex, validIds: Set<string>): Promise<number> {
+  const existingIds = await db<PlaceCandidateRow>('place_candidates').pluck('id');
+  const staleIds = existingIds.filter((id) => !validIds.has(id));
+
+  await db.transaction(async (trx) => {
+    for (const id of staleIds) {
+      await trx<PlaceCandidateRow>('place_candidates').where({ id }).delete();
+    }
+  });
+
+  return staleIds.length;
+}
+
 export async function softDeleteMissingOsmPlaces(
   db: Knex,
   activeOsmIds: string[],

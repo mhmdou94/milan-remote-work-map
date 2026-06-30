@@ -1,23 +1,19 @@
 import { Request, Response } from 'express';
 import { Knex } from 'knex';
 import { getDistinctCities, getPlaces } from '../db/queries.js';
-import { BBox, GeoJSONCollection, GeoJSONFeature, Place } from '../types.js';
+import { GeoJSONCollection, GeoJSONFeature, Place } from '../types.js';
+import { parseBboxParam } from './bbox.js';
 
 export function createPlacesRoute(db: Knex) {
   return async (req: Request, res: Response) => {
     try {
       // Either a bbox (?bbox=minLat,minLon,maxLat,maxLon) or a city
       // (?city=Milano) must be given to scope the results.
-      const bboxStr = req.query.bbox as string | undefined;
       const city = req.query.city as string | undefined;
 
-      let bbox: BBox | undefined;
-      if (bboxStr) {
-        const [minLat, minLon, maxLat, maxLon] = bboxStr.split(',').map(Number);
-        if (isNaN(minLat) || isNaN(minLon) || isNaN(maxLat) || isNaN(maxLon)) {
-          return res.status(400).json({ error: 'Invalid bbox coordinates' });
-        }
-        bbox = { minLat, minLon, maxLat, maxLon };
+      const bbox = parseBboxParam(req.query.bbox as string | undefined);
+      if (bbox === null) {
+        return res.status(400).json({ error: 'Invalid bbox coordinates' });
       }
 
       if (!bbox && !city) {

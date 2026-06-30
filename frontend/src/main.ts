@@ -21,7 +21,7 @@ if (app) {
   if (menuNav) {
     menuNav.addEventListener('page-change', (event: CustomEvent) => {
       console.log('🎯 Page change event:', event.detail);
-      app_.currentPage = event.detail;
+      app_.navigateToPage(event.detail);
     });
   }
 
@@ -29,8 +29,7 @@ if (app) {
   if (filterPopover) {
     filterPopover.addEventListener('filters-change', (event: CustomEvent) => {
       console.log('🎯 Filters change event:', event.detail);
-      app_.filters = event.detail;
-      app_.fetchPlaces();
+      app_.applyFilters(event.detail);
     });
   }
 

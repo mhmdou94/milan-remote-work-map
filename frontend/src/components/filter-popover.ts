@@ -8,6 +8,7 @@ export class FilterPopover extends LitElement {
     sockets: boolean;
     openNow: boolean;
     showRemoved: boolean;
+    showCandidates: boolean;
   };
 
   constructor() {
@@ -18,6 +19,7 @@ export class FilterPopover extends LitElement {
       sockets: false,
       openNow: false,
       showRemoved: false,
+      showCandidates: false,
     };
   }
 
@@ -126,6 +128,21 @@ export class FilterPopover extends LitElement {
       flex: 1;
       font-size: 14px;
     }
+
+    .filter-divider {
+      border: none;
+      border-top: 1px solid #eee;
+      margin: 12px 0;
+    }
+
+    .filter-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: #999;
+      letter-spacing: 0.04em;
+      margin-bottom: 8px;
+    }
   `;
 
   render() {
@@ -187,6 +204,21 @@ export class FilterPopover extends LitElement {
                   <span class="filter-label">Show recently removed</span>
                 </label>
               </div>
+
+              <hr class="filter-divider" />
+
+              <div class="filter-group">
+                <div class="filter-section-title">Help find new places</div>
+                <label class="filter-item">
+                  <input
+                    type="checkbox"
+                    .checked=${this.filters.showCandidates}
+                    @change=${(e: Event) =>
+                      this.updateFilter('showCandidates', (e.target as HTMLInputElement).checked)}
+                  />
+                  <span class="filter-label">Show suggested places (unverified)</span>
+                </label>
+              </div>
             </div>
           `
         : ''}
@@ -208,6 +240,7 @@ export class FilterPopover extends LitElement {
       sockets: false,
       openNow: false,
       showRemoved: false,
+      showCandidates: false,
     };
     this.emitFilters();
   }

@@ -13,8 +13,8 @@ export class LegendPopover extends LitElement {
   static styles = css`
     :host {
       position: fixed;
-      bottom: 20px;
-      left: 16px;
+      top: 60px;
+      right: 68px;
       z-index: 400;
     }
 
@@ -39,8 +39,8 @@ export class LegendPopover extends LitElement {
 
     .legend-popover {
       position: absolute;
-      bottom: 54px;
-      left: 0;
+      top: 54px;
+      right: 0;
       background: rgba(255, 255, 255, 0.95);
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);

@@ -97,7 +97,7 @@ function featureToPlace(feature: OsmiumFeature): Place | null {
   };
 }
 
-function inferCategory(tags: Record<string, string>): string | undefined {
+export function inferCategory(tags: Record<string, string>): string | undefined {
   if (tags.amenity) return tags.amenity;
   if (tags.shop) return tags.shop;
   if (tags.leisure) return tags.leisure;
@@ -105,7 +105,7 @@ function inferCategory(tags: Record<string, string>): string | undefined {
   return undefined;
 }
 
-function formatAddress(tags: Record<string, string>): string | undefined {
+export function formatAddress(tags: Record<string, string>): string | undefined {
   const parts: string[] = [];
   if (tags['addr:street']) parts.push(tags['addr:street']);
   if (tags['addr:housenumber']) parts.push(tags['addr:housenumber']);
@@ -113,7 +113,9 @@ function formatAddress(tags: Record<string, string>): string | undefined {
   return parts.length > 0 ? parts.join(', ') : undefined;
 }
 
-function normalizeInternetAccess(value: string | undefined): 'yes' | 'no' | 'wired' | undefined {
+export function normalizeInternetAccess(
+  value: string | undefined
+): 'yes' | 'no' | 'wired' | undefined {
   if (!value) return undefined;
   const lower = value.toLowerCase();
   if (lower === 'yes' || lower === 'true') return 'yes';
@@ -122,7 +124,7 @@ function normalizeInternetAccess(value: string | undefined): 'yes' | 'no' | 'wir
   return undefined;
 }
 
-function normalizeSockets(value: string | undefined): 'yes' | 'no' | 'many' | undefined {
+export function normalizeSockets(value: string | undefined): 'yes' | 'no' | 'many' | undefined {
   if (!value) return undefined;
   const lower = value.toLowerCase();
   if (lower === 'yes' || lower === 'true') return 'yes';

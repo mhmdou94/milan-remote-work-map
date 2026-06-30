@@ -1,8 +1,9 @@
 import { LitElement, html, css } from 'lit';
 import L, { map as createMap, tileLayer } from 'leaflet';
 import 'leaflet.markercluster';
-import type { Place } from '../types';
+import type { Place, PlaceCandidate } from '../types';
 import { getCategoryInfo } from '../categories';
+import { candidateToPlace } from '../lib/place.js';
 
 console.log('📦 MapComponent module loaded');
 
@@ -32,6 +33,14 @@ export class MapComponent extends LitElement {
       height: 100%;
     }
 
+    /* menu-nav is a fixed top bar that overlaps the map's top-left corner,
+       where Leaflet anchors its default zoom control — push it down clear
+       of the bar. Leaflet renders its controls inside this shadow root, so
+       a plain selector reaches them. */
+    .leaflet-top.leaflet-left {
+      top: 64px;
+    }
+
     .emoji-marker {
       font-size: 22px;
       line-height: 32px;
@@ -45,28 +54,61 @@ export class MapComponent extends LitElement {
       opacity: 0.45;
       filter: grayscale(1) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
     }
+
+    .emoji-marker.candidate {
+      opacity: 0.6;
+      filter: grayscale(0.6) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+      border: 2px dashed #999;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.6);
+    }
+
+    .empty-state {
+      position: absolute;
+      top: 72px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.95);
+      color: #555;
+      padding: 10px 16px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      font-size: 13px;
+      text-align: center;
+      max-width: 80%;
+      z-index: 450;
+      pointer-events: none;
+    }
   `;
 
   static properties = {
     places: { type: Array },
+    candidates: { type: Array },
     selectedPlace: { type: Object },
+    showEmptyState: { type: Boolean, state: true },
   };
 
   declare places: Place[];
+  declare candidates: PlaceCandidate[];
   declare selectedPlace: Place | null;
+  declare showEmptyState: boolean;
   map: L.Map | null;
   userLocation: { lat: number; lon: number } | null;
   markerCluster: any;
+  candidateLayer: L.LayerGroup | null;
   private resizeObserver: ResizeObserver | null = null;
   private markers: Map<string, L.Marker> = new Map();
 
   constructor() {
     super();
     this.places = [];
+    this.candidates = [];
     this.selectedPlace = null;
+    this.showEmptyState = false;
     this.map = null;
     this.userLocation = null;
     this.markerCluster = null;
+    this.candidateLayer = null;
   }
 
   render() {
@@ -74,6 +116,13 @@ export class MapComponent extends LitElement {
     return html`
       ${LEAFLET_CSS}
       <div id="map-container"></div>
+      ${this.showEmptyState
+        ? html`
+            <div class="empty-state">
+              📍 No laptop-friendly places in view — try panning back toward Milan or zooming out.
+            </div>
+          `
+        : ''}
     `;
   }
 
@@ -110,8 +159,15 @@ export class MapComponent extends LitElement {
       console.log('📍 Places changed, rendering markers. Count:', this.places.length);
       this.renderMarkers();
     }
+    if (changedProperties.has('candidates')) {
+      console.log('💡 Candidates changed, rendering markers. Count:', this.candidates.length);
+      this.renderCandidateMarkers();
+    }
     if (changedProperties.has('selectedPlace')) {
       this.highlightSelectedPlace();
+    }
+    if (changedProperties.has('places') || changedProperties.has('candidates')) {
+      this.updateEmptyState();
     }
   }
 
@@ -156,6 +212,12 @@ export class MapComponent extends LitElement {
       this.map.addLayer(this.markerCluster);
       console.log('✓ Marker cluster initialized');
 
+      this.candidateLayer = L.layerGroup();
+      this.map.addLayer(this.candidateLayer);
+      console.log('✓ Candidate layer initialized');
+
+      this.map.on('moveend', () => this.updateEmptyState());
+
       // Watch for container resize
       this.resizeObserver = new ResizeObserver(() => {
         if (this.map) {
@@ -170,9 +232,22 @@ export class MapComponent extends LitElement {
       // would have bailed out with nothing to render into, and `places`
       // won't change again to retrigger it. Render now that we're ready.
       this.renderMarkers();
+      this.renderCandidateMarkers();
+      this.updateEmptyState();
     } catch (error) {
       console.error('❌ Error initializing map:', error);
     }
+  }
+
+  private updateEmptyState() {
+    if (!this.map) return;
+
+    const bounds = this.map.getBounds();
+    const hasPlaceInView = this.places.some((p) => bounds.contains([p.latitude, p.longitude]));
+    const hasCandidateInView = this.candidates.some((c) =>
+      bounds.contains([c.latitude, c.longitude])
+    );
+    this.showEmptyState = !hasPlaceInView && !hasCandidateInView;
   }
 
   private renderMarkers() {
@@ -213,15 +288,43 @@ export class MapComponent extends LitElement {
     console.log('✓ Markers rendered, total:', this.markers.size);
   }
 
-  private highlightSelectedPlace() {
-    // Highlight selected
-    if (this.selectedPlace) {
-      const marker = this.markers.get(this.selectedPlace.id);
-      if (marker) {
-        marker.openPopup();
-        this.map?.setView([this.selectedPlace.latitude, this.selectedPlace.longitude], 15);
-      }
+  private renderCandidateMarkers() {
+    if (!this.map || !this.candidateLayer) return;
+
+    this.candidateLayer.clearLayers();
+
+    for (const candidate of this.candidates) {
+      const { emoji } = getCategoryInfo(candidate.category);
+      const marker = L.marker([candidate.latitude, candidate.longitude], {
+        title: candidate.name,
+        icon: L.divIcon({
+          html: `<div class="emoji-marker candidate">${emoji}</div>`,
+          className: '',
+          iconSize: [32, 32],
+          iconAnchor: [16, 16],
+          popupAnchor: [0, -16],
+        }),
+      });
+
+      // Candidates open the same place-detail-modal as confirmed places
+      // (reviews, amenities, nearby transit) — the modal shows an
+      // "unverified" banner based on `unverified: true`.
+      marker.on('click', () => {
+        this.dispatchEvent(
+          new CustomEvent('place-selected', { detail: candidateToPlace(candidate) })
+        );
+      });
+
+      this.candidateLayer.addLayer(marker);
     }
+  }
+
+  private highlightSelectedPlace() {
+    if (!this.selectedPlace || !this.map) return;
+
+    const marker = this.markers.get(this.selectedPlace.id);
+    marker?.openPopup();
+    this.map.setView([this.selectedPlace.latitude, this.selectedPlace.longitude], 15);
   }
 
   private createMarkerIcon(place: Place): L.DivIcon {

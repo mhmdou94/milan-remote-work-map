@@ -1,6 +1,8 @@
 import { initDb, closeDb } from './db/init.js';
 import { downloadPbf } from './worker/download.js';
 import { extractPlacesFromPbf } from './worker/pbf.js';
+import { extractTransitFromPbf } from './worker/transit.js';
+import { extractCandidatesFromPbf } from './worker/candidates.js';
 import { resolveActiveRegions, PBF_REGIONS } from './worker/regions.js';
 import {
   clearStaging,
@@ -10,6 +12,10 @@ import {
   insertPlace,
   updatePlace,
   softDeleteMissingOsmPlaces,
+  upsertTransitStop,
+  upsertPlaceCandidate,
+  pruneTransitStops,
+  prunePlaceCandidates,
 } from './db/queries.js';
 import type { Place, StagedPlace } from './types.js';
 
@@ -45,6 +51,9 @@ async function syncPlaces(): Promise<void> {
     await clearStaging(db);
 
     let totalFetched = 0;
+    const seenTransitIds = new Set<string>();
+    const seenCandidateIds = new Set<string>();
+
     for (const region of activeRegions) {
       console.log(`\n📍 Region: ${region.name}`);
       const pbfPath = await downloadPbf(region);
@@ -58,6 +67,26 @@ async function syncPlaces(): Promise<void> {
         await insertStaged(db, toStagedPlace(place), now);
       }
       totalFetched += fetched.length;
+
+      console.log(`  🚌 Extracting transit stops & bike parking with osmium...`);
+      const transitStops = await extractTransitFromPbf(pbfPath);
+      console.log(`  📦 Upserting ${transitStops.length} transit stops from ${region.name}...`);
+      await db.transaction(async (trx) => {
+        for (const stop of transitStops) {
+          await upsertTransitStop(trx, stop, now);
+          seenTransitIds.add(stop.id);
+        }
+      });
+
+      console.log(`  💡 Extracting candidate places with osmium...`);
+      const candidates = await extractCandidatesFromPbf(pbfPath);
+      console.log(`  📦 Upserting ${candidates.length} candidates from ${region.name}...`);
+      await db.transaction(async (trx) => {
+        for (const candidate of candidates) {
+          await upsertPlaceCandidate(trx, candidate, now);
+          seenCandidateIds.add(candidate.id);
+        }
+      });
     }
 
     const staged = await getAllStaged(db);
@@ -114,6 +143,8 @@ async function syncPlaces(): Promise<void> {
     }
 
     let removedCount = 0;
+    let prunedTransitCount = 0;
+    let prunedCandidateCount = 0;
     if (activeRegions.length === PBF_REGIONS.length) {
       console.log(`\n🗑️  Soft-deleting places no longer tagged laptop=yes in OSM...`);
       const removedIds = await softDeleteMissingOsmPlaces(
@@ -122,9 +153,13 @@ async function syncPlaces(): Promise<void> {
         now
       );
       removedCount = removedIds.length;
+
+      console.log(`\n🗑️  Pruning transit stops & candidates no longer present in OSM...`);
+      prunedTransitCount = await pruneTransitStops(db, seenTransitIds);
+      prunedCandidateCount = await prunePlaceCandidates(db, seenCandidateIds);
     } else {
       console.log(
-        `\n⚠️  Skipping soft-delete: partial region sync (${activeRegions.map((r) => r.name).join(', ')}) ` +
+        `\n⚠️  Skipping soft-delete & pruning: partial region sync (${activeRegions.map((r) => r.name).join(', ')}) ` +
           `doesn't cover the full OSM universe, so missing places elsewhere don't mean they were removed.`
       );
     }
@@ -134,6 +169,9 @@ async function syncPlaces(): Promise<void> {
     console.log(`\n✅ Sync complete!`);
     console.log(
       `   ${inserted} new, ${updated} updated (${restored} restored), ${removedCount} soft-deleted (${totalFetched} fetched)`
+    );
+    console.log(
+      `   ${prunedTransitCount} stale transit stops pruned, ${prunedCandidateCount} stale candidates pruned`
     );
     console.log(`📍 API ready: http://localhost:3000/api/places?bbox=45.3,9.0,45.6,9.4\n`);
   } catch (error) {
