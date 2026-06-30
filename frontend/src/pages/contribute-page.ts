@@ -3,6 +3,25 @@ import { pageHostStyles } from './page-styles.js';
 
 const WIKI = 'https://wiki.openstreetmap.org/wiki/';
 
+// Custom MapComplete layers (mapcomplete/*.json in this repo), published via
+// MapComplete Studio. z/lat/lon just default the view to Milan so first-time
+// visitors aren't dropped somewhere random.
+const MAPCOMPLETE_DETAILS_URL =
+  'https://mapcomplete.org/theme.html?' +
+  'userlayout=' +
+  encodeURIComponent(
+    'https://studio.mapcomplete.org/1914637/layers/laptop_friendly_places/laptop_friendly_places.json'
+  ) +
+  '&z=13&lat=45.4642&lon=9.19';
+
+const MAPCOMPLETE_CANDIDATES_URL =
+  'https://mapcomplete.org/theme.html?' +
+  'userlayout=' +
+  encodeURIComponent(
+    'https://studio.mapcomplete.org/1914637/layers/laptop_friendly_places_candidates/laptop_friendly_places_candidates.json'
+  ) +
+  '&z=13&lat=45.4642&lon=9.19';
+
 const TAGS_USED = [
   {
     key: 'laptop=yes',
@@ -191,10 +210,20 @@ export class ContributePage extends LitElement {
           Help improve this map by contributing to
           <a href="https://www.openstreetmap.org/" target="_blank">OpenStreetMap</a>.
         </p>
-        <p>
-          You can also use <a href="https://mapcomplete.osm.be/" target="_blank">MapComplete</a>
-          to add or edit places.
-        </p>
+        <p>You can also use our MapComplete editors to contribute directly:</p>
+        <ul>
+          <li>
+            <a href=${MAPCOMPLETE_CANDIDATES_URL} target="_blank">Map a new place</a>
+            &mdash; browse cafés, bars, pubs, fast food places, food courts, libraries, coworking
+            spaces, community centres and bakeries that aren't tagged yet, and answer one question
+            to add them to this map.
+          </li>
+          <li>
+            <a href=${MAPCOMPLETE_DETAILS_URL} target="_blank">Add details to an existing place</a>
+            &mdash; edit places already on this map: WiFi, sockets, opening hours, accessibility,
+            and the other fields shown in place details.
+          </li>
+        </ul>
 
         <h2>Which tags we use</h2>
         <p>
