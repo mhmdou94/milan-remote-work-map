@@ -23,6 +23,23 @@ interface PlaceRow {
   wifi_ssid: string | null;
   wifi_fee: string | null;
   wifi_password: string | null;
+  wheelchair: string | null;
+  air_conditioning: string | null;
+  outdoor_seating: string | null;
+  indoor_seating: string | null;
+  smoking: string | null;
+  level: string | null;
+  phone: string | null;
+  website: string | null;
+  fee: string | null;
+  charge: string | null;
+  reservation: string | null;
+  capacity: string | null;
+  brand: string | null;
+  drinking_water: string | null;
+  toilets: string | null;
+  toilets_wheelchair: string | null;
+  dog: string | null;
   osm_id: string | null;
   osm_tags: string | null;
   source: string;
@@ -48,6 +65,23 @@ interface StagingRow {
   wifi_ssid: string | null;
   wifi_fee: string | null;
   wifi_password: string | null;
+  wheelchair: string | null;
+  air_conditioning: string | null;
+  outdoor_seating: string | null;
+  indoor_seating: string | null;
+  smoking: string | null;
+  level: string | null;
+  phone: string | null;
+  website: string | null;
+  fee: string | null;
+  charge: string | null;
+  reservation: string | null;
+  capacity: string | null;
+  brand: string | null;
+  drinking_water: string | null;
+  toilets: string | null;
+  toilets_wheelchair: string | null;
+  dog: string | null;
   osm_tags: string | null;
   fetched_at: string | null;
 }
@@ -68,6 +102,23 @@ function rowToPlace(row: PlaceRow): Place {
     wifiSsid: row.wifi_ssid ?? undefined,
     wifiFee: (row.wifi_fee as Place['wifiFee']) ?? undefined,
     wifiPassword: (row.wifi_password as Place['wifiPassword']) ?? undefined,
+    wheelchair: (row.wheelchair as Place['wheelchair']) ?? undefined,
+    airConditioning: (row.air_conditioning as Place['airConditioning']) ?? undefined,
+    outdoorSeating: (row.outdoor_seating as Place['outdoorSeating']) ?? undefined,
+    indoorSeating: (row.indoor_seating as Place['indoorSeating']) ?? undefined,
+    smoking: (row.smoking as Place['smoking']) ?? undefined,
+    level: row.level ?? undefined,
+    phone: row.phone ?? undefined,
+    website: row.website ?? undefined,
+    fee: (row.fee as Place['fee']) ?? undefined,
+    charge: row.charge ?? undefined,
+    reservation: (row.reservation as Place['reservation']) ?? undefined,
+    capacity: row.capacity ?? undefined,
+    brand: row.brand ?? undefined,
+    drinkingWater: (row.drinking_water as Place['drinkingWater']) ?? undefined,
+    toilets: (row.toilets as Place['toilets']) ?? undefined,
+    toiletsWheelchair: (row.toilets_wheelchair as Place['toiletsWheelchair']) ?? undefined,
+    dog: (row.dog as Place['dog']) ?? undefined,
     osmId: row.osm_id ?? undefined,
     osmTags: row.osm_tags ? JSON.parse(row.osm_tags) : undefined,
     source: row.source as Place['source'],
@@ -95,6 +146,23 @@ function rowToStaged(row: StagingRow): StagedPlace {
     wifiSsid: row.wifi_ssid ?? undefined,
     wifiFee: (row.wifi_fee as StagedPlace['wifiFee']) ?? undefined,
     wifiPassword: (row.wifi_password as StagedPlace['wifiPassword']) ?? undefined,
+    wheelchair: (row.wheelchair as StagedPlace['wheelchair']) ?? undefined,
+    airConditioning: (row.air_conditioning as StagedPlace['airConditioning']) ?? undefined,
+    outdoorSeating: (row.outdoor_seating as StagedPlace['outdoorSeating']) ?? undefined,
+    indoorSeating: (row.indoor_seating as StagedPlace['indoorSeating']) ?? undefined,
+    smoking: (row.smoking as StagedPlace['smoking']) ?? undefined,
+    level: row.level ?? undefined,
+    phone: row.phone ?? undefined,
+    website: row.website ?? undefined,
+    fee: (row.fee as StagedPlace['fee']) ?? undefined,
+    charge: row.charge ?? undefined,
+    reservation: (row.reservation as StagedPlace['reservation']) ?? undefined,
+    capacity: row.capacity ?? undefined,
+    brand: row.brand ?? undefined,
+    drinkingWater: (row.drinking_water as StagedPlace['drinkingWater']) ?? undefined,
+    toilets: (row.toilets as StagedPlace['toilets']) ?? undefined,
+    toiletsWheelchair: (row.toilets_wheelchair as StagedPlace['toiletsWheelchair']) ?? undefined,
+    dog: (row.dog as StagedPlace['dog']) ?? undefined,
     osmTags: row.osm_tags ? JSON.parse(row.osm_tags) : undefined,
   };
 }
@@ -161,6 +229,23 @@ export async function insertPlace(db: Knex, place: Place): Promise<void> {
     wifi_ssid: place.wifiSsid || null,
     wifi_fee: place.wifiFee || null,
     wifi_password: place.wifiPassword || null,
+    wheelchair: place.wheelchair || null,
+    air_conditioning: place.airConditioning || null,
+    outdoor_seating: place.outdoorSeating || null,
+    indoor_seating: place.indoorSeating || null,
+    smoking: place.smoking || null,
+    level: place.level || null,
+    phone: place.phone || null,
+    website: place.website || null,
+    fee: place.fee || null,
+    charge: place.charge || null,
+    reservation: place.reservation || null,
+    capacity: place.capacity || null,
+    brand: place.brand || null,
+    drinking_water: place.drinkingWater || null,
+    toilets: place.toilets || null,
+    toilets_wheelchair: place.toiletsWheelchair || null,
+    dog: place.dog || null,
     osm_id: place.osmId || null,
     osm_tags: place.osmTags ? JSON.stringify(place.osmTags) : null,
     source: place.source,
@@ -189,6 +274,27 @@ export async function updatePlace(
   if (updates.wifiSsid !== undefined) row.wifi_ssid = updates.wifiSsid || null;
   if (updates.wifiFee !== undefined) row.wifi_fee = updates.wifiFee || null;
   if (updates.wifiPassword !== undefined) row.wifi_password = updates.wifiPassword || null;
+  if (updates.wheelchair !== undefined) row.wheelchair = updates.wheelchair || null;
+  if (updates.airConditioning !== undefined) {
+    row.air_conditioning = updates.airConditioning || null;
+  }
+  if (updates.outdoorSeating !== undefined) row.outdoor_seating = updates.outdoorSeating || null;
+  if (updates.indoorSeating !== undefined) row.indoor_seating = updates.indoorSeating || null;
+  if (updates.smoking !== undefined) row.smoking = updates.smoking || null;
+  if (updates.level !== undefined) row.level = updates.level || null;
+  if (updates.phone !== undefined) row.phone = updates.phone || null;
+  if (updates.website !== undefined) row.website = updates.website || null;
+  if (updates.fee !== undefined) row.fee = updates.fee || null;
+  if (updates.charge !== undefined) row.charge = updates.charge || null;
+  if (updates.reservation !== undefined) row.reservation = updates.reservation || null;
+  if (updates.capacity !== undefined) row.capacity = updates.capacity || null;
+  if (updates.brand !== undefined) row.brand = updates.brand || null;
+  if (updates.drinkingWater !== undefined) row.drinking_water = updates.drinkingWater || null;
+  if (updates.toilets !== undefined) row.toilets = updates.toilets || null;
+  if (updates.toiletsWheelchair !== undefined) {
+    row.toilets_wheelchair = updates.toiletsWheelchair || null;
+  }
+  if (updates.dog !== undefined) row.dog = updates.dog || null;
   if (updates.verified !== undefined) row.verified = updates.verified as unknown as number;
   if (updates.address !== undefined) row.address = updates.address || null;
   if (updates.city !== undefined) row.city = updates.city || null;
@@ -247,6 +353,23 @@ export async function insertStaged(
     wifi_ssid: staged.wifiSsid || null,
     wifi_fee: staged.wifiFee || null,
     wifi_password: staged.wifiPassword || null,
+    wheelchair: staged.wheelchair || null,
+    air_conditioning: staged.airConditioning || null,
+    outdoor_seating: staged.outdoorSeating || null,
+    indoor_seating: staged.indoorSeating || null,
+    smoking: staged.smoking || null,
+    level: staged.level || null,
+    phone: staged.phone || null,
+    website: staged.website || null,
+    fee: staged.fee || null,
+    charge: staged.charge || null,
+    reservation: staged.reservation || null,
+    capacity: staged.capacity || null,
+    brand: staged.brand || null,
+    drinking_water: staged.drinkingWater || null,
+    toilets: staged.toilets || null,
+    toilets_wheelchair: staged.toiletsWheelchair || null,
+    dog: staged.dog || null,
     osm_tags: staged.osmTags ? JSON.stringify(staged.osmTags) : null,
     fetched_at: fetchedAt,
   });

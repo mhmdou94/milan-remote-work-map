@@ -915,6 +915,131 @@ export class PlaceDetailModal extends LitElement {
       });
     }
 
+    if (this.place?.wheelchair) {
+      amenities.push({
+        icon: '♿',
+        name: 'Wheelchair access',
+        value:
+          this.place.wheelchair === 'yes'
+            ? 'Yes'
+            : this.place.wheelchair === 'limited'
+              ? 'Limited'
+              : 'No',
+        tone:
+          this.place.wheelchair === 'yes'
+            ? 'good'
+            : this.place.wheelchair === 'limited'
+              ? 'neutral'
+              : 'unknown',
+      });
+    }
+
+    if (this.place?.airConditioning) {
+      amenities.push({
+        icon: '❄️',
+        name: 'Air conditioning',
+        value: this.place.airConditioning === 'yes' ? 'Yes' : 'No',
+        tone: this.place.airConditioning === 'yes' ? 'good' : 'unknown',
+      });
+    }
+
+    if (this.place?.indoorSeating) {
+      amenities.push({
+        icon: '🏠',
+        name: 'Indoor seating',
+        value: this.place.indoorSeating === 'yes' ? 'Yes' : 'No',
+        tone: this.place.indoorSeating === 'yes' ? 'good' : 'unknown',
+      });
+    }
+
+    if (this.place?.outdoorSeating) {
+      amenities.push({
+        icon: '☂️',
+        name: 'Outdoor seating',
+        value: this.place.outdoorSeating === 'yes' ? 'Yes' : 'No',
+        tone: this.place.outdoorSeating === 'yes' ? 'good' : 'unknown',
+      });
+    }
+
+    if (this.place?.smoking) {
+      const smokingLabels: Record<string, string> = {
+        yes: 'Yes',
+        no: 'No',
+        outside: 'Outside only',
+        separated: 'Separated area',
+      };
+      amenities.push({
+        icon: '🚬',
+        name: 'Smoking',
+        value: smokingLabels[this.place.smoking],
+        tone: this.place.smoking === 'no' ? 'good' : 'neutral',
+      });
+    }
+
+    if (this.place?.drinkingWater) {
+      amenities.push({
+        icon: '🚰',
+        name: 'Drinking water',
+        value: this.place.drinkingWater === 'yes' ? 'Yes' : 'No',
+        tone: this.place.drinkingWater === 'yes' ? 'good' : 'unknown',
+      });
+    }
+
+    if (this.place?.toilets) {
+      const wheelchairNote =
+        this.place.toiletsWheelchair === 'yes' ? ' (wheelchair accessible)' : '';
+      amenities.push({
+        icon: '🚻',
+        name: 'Toilets',
+        value: `${this.place.toilets === 'yes' ? 'Yes' : 'No'}${wheelchairNote}`,
+        tone: this.place.toilets === 'yes' ? 'good' : 'unknown',
+      });
+    }
+
+    if (this.place?.dog) {
+      amenities.push({
+        icon: '🐕',
+        name: 'Dogs allowed',
+        value: this.place.dog === 'yes' ? 'Yes' : this.place.dog === 'leashed' ? 'On leash' : 'No',
+        tone: this.place.dog === 'no' ? 'unknown' : 'neutral',
+      });
+    }
+
+    if (this.place?.fee) {
+      amenities.push({
+        icon: '💶',
+        name: 'Fee',
+        value: this.place.charge || (this.place.fee === 'yes' ? 'Yes' : 'No'),
+        tone: this.place.fee === 'yes' ? 'neutral' : 'good',
+      });
+    }
+
+    if (this.place?.reservation) {
+      amenities.push({
+        icon: '📅',
+        name: 'Reservation',
+        value:
+          this.place.reservation === 'yes'
+            ? 'Required'
+            : this.place.reservation === 'recommended'
+              ? 'Recommended'
+              : 'Not needed',
+        tone: 'neutral',
+      });
+    }
+
+    if (this.place?.capacity) {
+      amenities.push({ icon: '👥', name: 'Capacity', value: this.place.capacity, tone: 'neutral' });
+    }
+
+    if (this.place?.level) {
+      amenities.push({ icon: '🏢', name: 'Floor', value: this.place.level, tone: 'neutral' });
+    }
+
+    if (this.place?.brand) {
+      amenities.push({ icon: '🏷️', name: 'Brand', value: this.place.brand, tone: 'neutral' });
+    }
+
     if (amenities.length === 0) return html``;
 
     return html`
@@ -955,6 +1080,17 @@ export class PlaceDetailModal extends LitElement {
       )}`,
       primary: true,
     });
+
+    if (this.place.website) {
+      const href = /^https?:\/\//.test(this.place.website)
+        ? this.place.website
+        : `https://${this.place.website}`;
+      links.push({ label: 'Visit website', href });
+    }
+
+    if (this.place.phone) {
+      links.push({ label: 'Call', href: `tel:${this.place.phone.replace(/\s+/g, '')}` });
+    }
 
     if (this.place.osmId) {
       links.push({

@@ -89,6 +89,23 @@ function featureToPlace(feature: OsmiumFeature): Place | null {
     wifiSsid: tags['internet_access:ssid'],
     wifiFee: normalizeWifiFee(tags['internet_access:fee']),
     wifiPassword: normalizeYesNo(tags['internet_access:password']),
+    wheelchair: normalizeWheelchair(tags.wheelchair),
+    airConditioning: normalizeYesNo(tags.air_conditioning),
+    outdoorSeating: normalizeYesNo(tags.outdoor_seating),
+    indoorSeating: normalizeYesNo(tags.indoor_seating),
+    smoking: normalizeSmoking(tags.smoking),
+    level: tags.level,
+    phone: tags.phone ?? tags['contact:phone'],
+    website: tags.website ?? tags['contact:website'],
+    fee: normalizeYesNo(tags.fee),
+    charge: tags.charge,
+    reservation: normalizeReservation(tags.reservation),
+    capacity: tags.capacity,
+    brand: tags.brand ?? tags.operator,
+    drinkingWater: normalizeYesNo(tags.drinking_water),
+    toilets: normalizeYesNo(tags.toilets),
+    toiletsWheelchair: normalizeYesNo(tags['toilets:wheelchair']),
+    dog: normalizeDog(tags.dog),
     osmId,
     osmTags: tags,
     source: 'osm',
@@ -145,6 +162,45 @@ function normalizeWifiFee(value: string | undefined): 'yes' | 'no' | 'customers'
   if (!value) return undefined;
   const lower = value.toLowerCase();
   if (lower === 'customers') return 'customers';
+  if (lower === 'yes' || lower === 'true') return 'yes';
+  if (lower === 'no' || lower === 'false') return 'no';
+  return undefined;
+}
+
+function normalizeWheelchair(value: string | undefined): 'yes' | 'no' | 'limited' | undefined {
+  if (!value) return undefined;
+  const lower = value.toLowerCase();
+  if (lower === 'yes' || lower === 'true') return 'yes';
+  if (lower === 'limited') return 'limited';
+  if (lower === 'no' || lower === 'false') return 'no';
+  return undefined;
+}
+
+function normalizeSmoking(
+  value: string | undefined
+): 'yes' | 'no' | 'outside' | 'separated' | undefined {
+  if (!value) return undefined;
+  const lower = value.toLowerCase();
+  if (lower === 'outside') return 'outside';
+  if (lower === 'separated' || lower === 'isolated') return 'separated';
+  if (lower === 'yes' || lower === 'true' || lower === 'dedicated') return 'yes';
+  if (lower === 'no' || lower === 'false') return 'no';
+  return undefined;
+}
+
+function normalizeReservation(value: string | undefined): 'yes' | 'no' | 'recommended' | undefined {
+  if (!value) return undefined;
+  const lower = value.toLowerCase();
+  if (lower === 'recommended') return 'recommended';
+  if (lower === 'yes' || lower === 'true' || lower === 'required') return 'yes';
+  if (lower === 'no' || lower === 'false') return 'no';
+  return undefined;
+}
+
+function normalizeDog(value: string | undefined): 'yes' | 'no' | 'leashed' | undefined {
+  if (!value) return undefined;
+  const lower = value.toLowerCase();
+  if (lower === 'leashed' || lower === 'leash') return 'leashed';
   if (lower === 'yes' || lower === 'true') return 'yes';
   if (lower === 'no' || lower === 'false') return 'no';
   return undefined;
