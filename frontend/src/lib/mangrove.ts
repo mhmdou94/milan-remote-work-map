@@ -1,12 +1,21 @@
 // Mangrove.reviews integration — pure functions (no DOM rendering).
 // Identity is a self-generated P-256 keypair stored in localStorage — there is
 // no API key or registration step; the public key itself is the identity.
-// Subject URI: geo:{lat},{lon}?q=osm_place_{osmId}&u=50
+// Subject URI: geo:{lat},{lon}?q=osm_place_{osmId}&u=50&app={APP_DISCRIMINATOR}
 // Rating scale: 0-100, shown as 1-5 stars (20/40/60/80/100).
 // Reference implementation: https://github.com/mfuhrmann/spieli (ReviewsPanel.svelte, lib/reviews.js)
 
 const MANGROVE_API = 'https://api.mangrove.reviews';
 const LS_KEY = 'milan-remote-work-map-mangrove-keypair';
+
+// Mangrove subjects are global and shared across every app that reviews the
+// same place — generic reviews there can be about anything (food, noise,
+// service), not specifically about working from the place. Appending this
+// discriminator scopes fetch/submit to only the reviews left through this
+// site, so what's shown is actually about laptop-friendliness. It's a
+// random, hardcoded string (not the app name) so renaming or rebranding the
+// site never orphans previously-submitted reviews.
+const APP_DISCRIMINATOR = 'ad621a8f53d7';
 
 export interface MangroveReview {
   payload: {
@@ -90,7 +99,7 @@ function b64urlBytes(buf: ArrayBuffer): string {
 
 export function mangroveSubject(lat: number, lon: number, osmId?: string): string {
   const q = osmId ? `osm_place_${osmId.replace('/', '_')}` : 'place';
-  return `geo:${lat.toFixed(5)},${lon.toFixed(5)}?q=${q}&u=50`;
+  return `geo:${lat.toFixed(5)},${lon.toFixed(5)}?q=${q}&u=50&app=${APP_DISCRIMINATOR}`;
 }
 
 export async function fetchReviews(
