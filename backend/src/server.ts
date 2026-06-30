@@ -1,6 +1,6 @@
 import express from 'express';
 import { initDb, closeDb } from './db/init.js';
-import { createPlacesRoute } from './api/places.js';
+import { createPlacesRoute, createCitiesRoute } from './api/places.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -23,20 +23,22 @@ async function start() {
     res.json({ status: 'ok' });
   });
 
-  // Places API
   app.get('/api/places', createPlacesRoute(db));
+  app.get('/api/cities', createCitiesRoute(db));
 
   // Start server
   const server = app.listen(PORT, () => {
     console.log(`🗺️  Server running on http://localhost:${PORT}`);
-    console.log(`📍 API endpoint: http://localhost:${PORT}/api/places?bbox=minLat,minLon,maxLat,maxLon`);
+    console.log(
+      `📍 API endpoint: http://localhost:${PORT}/api/places?bbox=minLat,minLon,maxLat,maxLon`
+    );
   });
 
   // Graceful shutdown
   process.on('SIGINT', () => {
     console.log('Shutting down...');
-    server.close(() => {
-      closeDb(db);
+    server.close(async () => {
+      await closeDb(db);
       process.exit(0);
     });
   });

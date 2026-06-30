@@ -4,7 +4,8 @@ node_modules
 .pnp.js
 
 # Build output
-/dist
+backend/dist
+frontend/dist
 /build
 .next/
 
@@ -32,3 +33,14 @@ logs
 *.swp
 *.swo
 *~
+
+# Testing
+.playwright
+test-results
+playwright-report
+
+# Reference checkouts (cloned for local reading, not part of this repo)
+.reference
+
+# PBF files
+pbf/*

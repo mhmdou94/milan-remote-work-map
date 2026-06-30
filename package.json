@@ -5,15 +5,24 @@
   "private": true,
   "workspaces": [
     "frontend",
-    "backend"
+    "backend",
+    "e2e"
   ],
   "scripts": {
     "dev": "concurrently \"npm run dev --workspace=frontend\" \"npm run dev --workspace=backend\"",
     "build": "npm run build --workspace=frontend && npm run build --workspace=backend",
     "worker": "npm run worker --workspace=backend",
-    "lint": "npm run lint --workspace=frontend && npm run lint --workspace=backend"
+    "migrate": "npm run migrate --workspace=backend",
+    "seed": "npm run seed --workspace=backend",
+    "test": "npm run test --workspace=e2e",
+    "test:e2e": "npm run test --workspace=e2e",
+    "typecheck": "npm run typecheck --workspace=frontend && npm run typecheck --workspace=backend && npm run typecheck --workspace=e2e",
+    "lint": "npm run lint --workspace=frontend && npm run lint --workspace=backend && npm run lint --workspace=e2e",
+    "format": "prettier --write \"frontend/src/**/*.{ts,css,html}\" \"backend/src/**/*.ts\" \"backend/migrations/**/*.ts\" \"e2e/tests/**/*.ts\" \"e2e/playwright.config.ts\"",
+    "format:check": "prettier --check \"frontend/src/**/*.{ts,css,html}\" \"backend/src/**/*.ts\" \"backend/migrations/**/*.ts\" \"e2e/tests/**/*.ts\" \"e2e/playwright.config.ts\""
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "prettier": "^3.8.4"
   }
 }

@@ -1,10 +1,13 @@
 import { LitElement, html, css } from 'lit';
-import { property, state } from 'lit/decorators.js';
-import { MapComponent } from './components/map.js';
-import { FilterPopover } from './components/filter-popover.js';
-import { LegendPopover } from './components/legend-popover.js';
-import { MenuNav } from './components/menu-nav.js';
-import { PlaceDetailModal } from './components/place-detail-modal.js';
+// Import components as side effects to register custom elements
+import './components/map.js';
+import './components/filter-popover.js';
+import './components/legend-popover.js';
+import './components/menu-nav.js';
+import './components/place-detail-modal.js';
+import './pages/list-page.js';
+import './pages/contribute-page.js';
+import './pages/about-page.js';
 import type { Place, BBox } from './types.js';
 
 export class RemoteWorkApp extends LitElement {
@@ -19,6 +22,15 @@ export class RemoteWorkApp extends LitElement {
       width: 100%;
       height: 100%;
       position: relative;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+    }
+
+    remote-work-map {
+      flex: 1;
+      width: 100%;
+      min-height: 0;
     }
 
     .hidden-page {
@@ -26,17 +38,30 @@ export class RemoteWorkApp extends LitElement {
     }
   `;
 
-  @property() center: { lat: number; lon: number };
-  @state() places: Place[];
-  @state() selectedPlace: Place | null;
-  @state() currentPage: 'map' | 'contribute' | 'about';
-  @state() filters: { internetAccess: boolean; sockets: boolean; openNow: boolean };
+  static properties = {
+    center: { type: Object },
+    places: { type: Array },
+    selectedPlace: { type: Object },
+    currentPage: { type: String },
+    filters: { type: Object },
+  };
 
-  private mapComponent: MapComponent | null = null;
+  declare center: { lat: number; lon: number };
+  declare places: Place[];
+  declare selectedPlace: Place | null;
+  declare currentPage: 'map' | 'list' | 'contribute' | 'about';
+  declare filters: {
+    internetAccess: boolean;
+    sockets: boolean;
+    openNow: boolean;
+    showRemoved: boolean;
+  };
+
+  private mapComponent: any = null;
 
   constructor() {
     super();
-    this.center = { lat: 45.4642, lon: 9.19 }; // Milan
+    this.center = { lat: 45.4642, lon: 9.19 };
     this.places = [];
     this.selectedPlace = null;
     this.currentPage = 'map';
@@ -44,10 +69,17 @@ export class RemoteWorkApp extends LitElement {
       internetAccess: false,
       sockets: false,
       openNow: false,
+      showRemoved: false,
     };
   }
 
   render() {
+    console.log(
+      '🎨 RemoteWorkApp rendering, page:',
+      this.currentPage,
+      'places:',
+      this.places.length
+    );
     return html`
       <div class="app-container">
         <remote-work-map
@@ -58,45 +90,11 @@ export class RemoteWorkApp extends LitElement {
           class=${this.currentPage !== 'map' ? 'hidden-page' : ''}
         ></remote-work-map>
 
-        <filter-popover @filters-change=${this.handleFilterChange}></filter-popover>
-
-        <legend-popover></legend-popover>
-
-        <menu-nav
-          .currentPage=${this.currentPage}
-          @page-change=${this.handlePageChange}
-        ></menu-nav>
-
-        ${this.currentPage === 'contribute'
-          ? html`
-              <div class="hidden-page">
-                <h2>How to Contribute</h2>
-                <p>
-                  Help improve this map by contributing to
-                  <a href="https://www.openstreetmap.org/" target="_blank">OpenStreetMap</a>.
-                </p>
-                <p>
-                  You can also use
-                  <a href="https://mapcomplete.osm.be/" target="_blank">MapComplete</a> to add or
-                  edit places.
-                </p>
-              </div>
-            `
+        ${this.currentPage === 'list'
+          ? html`<list-page @place-selected=${this.handlePlaceSelect}></list-page>`
           : ''}
-
-        ${this.currentPage === 'about'
-          ? html`
-              <div class="hidden-page">
-                <h2>About</h2>
-                <p>
-                  Milan Remote Work Map helps you find places in Milan where you can work
-                  remotely.
-                </p>
-                <p>Data is sourced from OpenStreetMap, updated daily.</p>
-              </div>
-            `
-          : ''}
-
+        ${this.currentPage === 'contribute' ? html`<contribute-page></contribute-page>` : ''}
+        ${this.currentPage === 'about' ? html`<about-page></about-page>` : ''}
         ${this.selectedPlace
           ? html`
               <place-detail-modal
@@ -110,7 +108,7 @@ export class RemoteWorkApp extends LitElement {
   }
 
   firstUpdated() {
-    this.mapComponent = this.renderRoot.querySelector('#map') as MapComponent;
+    this.mapComponent = this.renderRoot.querySelector('#map');
   }
 
   async connectedCallback() {
@@ -138,6 +136,9 @@ export class RemoteWorkApp extends LitElement {
       if (this.filters.openNow) {
         params.append('open_now', '1');
       }
+      if (this.filters.showRemoved) {
+        params.append('include_deleted', '1');
+      }
 
       const res = await fetch(`/api/places?${params}`);
       const data = await res.json();
@@ -152,22 +153,15 @@ export class RemoteWorkApp extends LitElement {
     }
   }
 
-  private handlePlaceSelect(event: CustomEvent<Place>) {
+  private handlePlaceSelect = (event: CustomEvent<Place>) => {
+    console.log('📍 Place selected:', event.detail);
     this.selectedPlace = event.detail;
-  }
+  };
 
-  private handleDetailClose() {
+  private handleDetailClose = () => {
+    console.log('📍 Detail closed');
     this.selectedPlace = null;
-  }
-
-  private handleFilterChange(event: CustomEvent) {
-    this.filters = event.detail;
-    this.fetchPlaces();
-  }
-
-  private handlePageChange(event: CustomEvent<'map' | 'contribute' | 'about'>) {
-    this.currentPage = event.detail;
-  }
+  };
 }
 
 customElements.define('remote-work-app', RemoteWorkApp);

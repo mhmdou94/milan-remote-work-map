@@ -1,7 +1,15 @@
 import { LitElement, html, css } from 'lit';
 import { state } from 'lit/decorators.js';
+import { getLegendCategories } from '../categories.js';
 
 export class LegendPopover extends LitElement {
+  @state() declare open: boolean;
+
+  constructor() {
+    super();
+    this.open = false;
+  }
+
   static styles = css`
     :host {
       position: fixed;
@@ -63,11 +71,11 @@ export class LegendPopover extends LitElement {
       font-size: 13px;
     }
 
-    .legend-dot {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
+    .legend-emoji {
+      width: 18px;
+      text-align: center;
       flex-shrink: 0;
+      font-size: 15px;
     }
 
     .legend-label {
@@ -75,42 +83,30 @@ export class LegendPopover extends LitElement {
     }
   `;
 
-  @state() open = false;
-
   render() {
     return html`
-      <button
-        class="legend-btn"
-        @click=${this.toggleOpen}
-        title="Toggle legend"
-      >
-        🗺️
-      </button>
+      <button class="legend-btn" @click=${this.toggleOpen} title="Toggle legend">🗺️</button>
 
       ${this.open
         ? html`
             <div class="legend-popover">
               <div class="legend-title">Legend</div>
               <div class="legend-items">
+                ${getLegendCategories().map(
+                  ({ info }) => html`
+                    <div class="legend-item">
+                      <span class="legend-emoji">${info.emoji}</span>
+                      <span class="legend-label">${info.label}</span>
+                    </div>
+                  `
+                )}
                 <div class="legend-item">
-                  <div class="legend-dot" style="background: #3388ff;"></div>
-                  <span class="legend-label">Cafe / Bar</span>
-                </div>
-                <div class="legend-item">
-                  <div class="legend-dot" style="background: #8B4513;"></div>
-                  <span class="legend-label">Restaurant</span>
-                </div>
-                <div class="legend-item">
-                  <div class="legend-dot" style="background: #9C27B0;"></div>
-                  <span class="legend-label">Library</span>
-                </div>
-                <div class="legend-item">
-                  <div class="legend-dot" style="background: #4CAF50;"></div>
-                  <span class="legend-label">Coworking</span>
-                </div>
-                <div class="legend-item">
-                  <div class="legend-dot" style="background: #FF9800;"></div>
+                  <span class="legend-emoji">📍</span>
                   <span class="legend-label">Other</span>
+                </div>
+                <div class="legend-item">
+                  <span class="legend-emoji" style="opacity: 0.45; filter: grayscale(1);">📍</span>
+                  <span class="legend-label">Recently removed from OSM</span>
                 </div>
               </div>
             </div>

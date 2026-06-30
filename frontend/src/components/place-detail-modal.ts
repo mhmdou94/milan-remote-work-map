@@ -1,8 +1,37 @@
 import { LitElement, html, css } from 'lit';
-import { property } from 'lit/decorators.js';
+import { property, state } from 'lit/decorators.js';
 import type { Place } from '../types.js';
+import { fetchReviews, submitReview, relativeDate, type MangroveReview } from '../lib/mangrove.js';
+
+const STAR_VALUES = [20, 40, 60, 80, 100];
 
 export class PlaceDetailModal extends LitElement {
+  @property() declare place: Place | null;
+
+  @state() declare reviews: MangroveReview[];
+  @state() declare reviewsLoading: boolean;
+  @state() declare reviewsError: boolean;
+  @state() declare selectedRating: number | null;
+  @state() declare hoverRating: number | null;
+  @state() declare opinion: string;
+  @state() declare submitting: boolean;
+  @state() declare submitStatus: 'success' | 'error' | null;
+
+  private reviewsAbortController: AbortController | null = null;
+
+  constructor() {
+    super();
+    this.place = null;
+    this.reviews = [];
+    this.reviewsLoading = true;
+    this.reviewsError = false;
+    this.selectedRating = null;
+    this.hoverRating = null;
+    this.opinion = '';
+    this.submitting = false;
+    this.submitStatus = null;
+  }
+
   static styles = css`
     :host {
       position: fixed;
@@ -135,6 +164,28 @@ export class PlaceDetailModal extends LitElement {
       gap: 8px;
     }
 
+    .removed-notice {
+      background: #fdecea;
+      color: #d32f2f;
+      padding: 8px 10px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+
+    .restriction-notice {
+      background: #fff3e0;
+      color: #b26a00;
+      padding: 8px 10px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+
+    .restriction-notice code {
+      background: rgba(178, 106, 0, 0.12);
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+
     .link-btn {
       background: #1976d2;
       color: white;
@@ -162,9 +213,135 @@ export class PlaceDetailModal extends LitElement {
     .link-btn.secondary:hover {
       background: #f5f5f5;
     }
-  `;
 
-  @property() place: Place | null = null;
+    .review-aggregate {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 10px 14px;
+    }
+
+    .review-score {
+      font-size: 26px;
+      font-weight: 700;
+      color: #1f2937;
+      line-height: 1;
+    }
+
+    .review-stars {
+      color: #f59e0b;
+    }
+
+    .review-stars .empty {
+      color: #d1d5db;
+    }
+
+    .review-count {
+      color: #666;
+      font-size: 11px;
+    }
+
+    .review-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 13px;
+    }
+
+    .review-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 5px;
+    }
+
+    .review-date {
+      font-size: 11px;
+      color: #9ca3af;
+    }
+
+    .review-body {
+      margin: 0;
+      color: #1f2937;
+      line-height: 1.5;
+    }
+
+    .review-form {
+      border: 1px dashed #e5e7eb;
+      border-radius: 10px;
+      padding: 12px 14px;
+      background: #f9fafb;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .star-picker {
+      display: flex;
+      gap: 4px;
+    }
+
+    .star-btn {
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: 22px;
+      line-height: 1;
+      cursor: pointer;
+      color: #d1d5db;
+    }
+
+    .star-btn.filled {
+      color: #f59e0b;
+    }
+
+    .review-textarea {
+      font-size: 13px;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      resize: none;
+      font-family: inherit;
+    }
+
+    .review-submit-btn {
+      background: #10b981;
+      color: white;
+      border: none;
+      padding: 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .review-submit-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .review-status-success {
+      color: #10b981;
+      font-size: 12px;
+    }
+
+    .review-status-error {
+      color: #d32f2f;
+      font-size: 12px;
+    }
+
+    .review-privacy-note {
+      font-size: 11px;
+      color: #999;
+    }
+
+    .review-privacy-note a {
+      color: #666;
+    }
+  `;
 
   render() {
     if (!this.place) return html``;
@@ -182,6 +359,21 @@ export class PlaceDetailModal extends LitElement {
         </div>
 
         <div class="modal-content">
+          ${this.place.deletedAt
+            ? html`
+                <div class="removed-notice">
+                  ⚠️ No longer marked laptop-friendly on OpenStreetMap since
+                  ${new Date(this.place.deletedAt).toLocaleDateString()}
+                </div>
+              `
+            : ''}
+          ${this.place.laptopConditional
+            ? html`
+                <div class="restriction-notice">
+                  ⚠️ Laptop use restricted: <code>${this.place.laptopConditional}</code>
+                </div>
+              `
+            : ''}
           ${this.place.address
             ? html`
                 <div class="modal-section">
@@ -190,9 +382,7 @@ export class PlaceDetailModal extends LitElement {
                 </div>
               `
             : ''}
-
           ${this.renderAmenities()}
-
           ${this.place.openingHours
             ? html`
                 <div class="modal-section">
@@ -201,8 +391,176 @@ export class PlaceDetailModal extends LitElement {
                 </div>
               `
             : ''}
+          ${this.renderReviews()} ${this.renderLinks()}
+        </div>
+      </div>
+    `;
+  }
 
-          ${this.renderLinks()}
+  willUpdate(changedProperties: Map<string, unknown>) {
+    if (changedProperties.has('place') && this.place) {
+      this.loadReviews();
+    }
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.reviewsAbortController?.abort();
+  }
+
+  private async loadReviews() {
+    if (!this.place) return;
+
+    this.reviewsAbortController?.abort();
+    const controller = new AbortController();
+    this.reviewsAbortController = controller;
+
+    this.reviewsLoading = true;
+    this.reviewsError = false;
+    this.selectedRating = null;
+    this.opinion = '';
+    this.submitStatus = null;
+
+    try {
+      this.reviews = await fetchReviews(
+        this.place.latitude,
+        this.place.longitude,
+        this.place.osmId,
+        controller.signal
+      );
+    } catch (err) {
+      if ((err as Error).name !== 'AbortError') this.reviewsError = true;
+    } finally {
+      if (!controller.signal.aborted) this.reviewsLoading = false;
+    }
+  }
+
+  private async submit() {
+    if (!this.place || !this.selectedRating) return;
+
+    this.submitting = true;
+    this.submitStatus = null;
+
+    try {
+      const ok = await submitReview(
+        this.place.latitude,
+        this.place.longitude,
+        this.place.osmId,
+        this.selectedRating,
+        this.opinion.trim() || null
+      );
+      this.submitStatus = ok ? 'success' : 'error';
+      if (ok) {
+        this.selectedRating = null;
+        this.opinion = '';
+        setTimeout(() => this.loadReviews(), 1000);
+      }
+    } catch {
+      this.submitStatus = 'error';
+    } finally {
+      this.submitting = false;
+    }
+  }
+
+  private renderStars(rating100: number) {
+    const n = Math.max(1, Math.min(5, Math.round(rating100 / 20)));
+    return html`<span class="review-stars"
+      >${'★'.repeat(n)}<span class="empty">${'☆'.repeat(5 - n)}</span></span
+    >`;
+  }
+
+  private renderReviews() {
+    const ratedReviews = this.reviews.filter((r) => typeof r.payload?.rating === 'number');
+    const avgRating = ratedReviews.length
+      ? ratedReviews.reduce((sum, r) => sum + (r.payload.rating ?? 0), 0) / ratedReviews.length
+      : null;
+    const displayRating = this.hoverRating ?? this.selectedRating;
+
+    return html`
+      <div class="modal-section">
+        <div class="modal-section-title">Reviews</div>
+
+        ${this.reviewsLoading
+          ? html`<small style="color: #999;">Loading reviews…</small>`
+          : this.reviewsError
+            ? html`<small style="color: #999;">Couldn't load reviews.</small>`
+            : html`
+                ${avgRating !== null
+                  ? html`
+                      <div class="review-aggregate">
+                        <span class="review-score">${(avgRating / 20).toFixed(1)}</span>
+                        <div>
+                          ${this.renderStars(avgRating)}
+                          <div class="review-count">
+                            ${ratedReviews.length} review${ratedReviews.length === 1 ? '' : 's'}
+                          </div>
+                        </div>
+                      </div>
+                    `
+                  : html`<small style="color: #999;">No reviews yet — be the first!</small>`}
+                ${this.reviews.map(
+                  (r) => html`
+                    <div class="review-card">
+                      <div class="review-card-header">
+                        ${typeof r.payload.rating === 'number'
+                          ? this.renderStars(r.payload.rating)
+                          : ''}
+                        <span class="review-date">${relativeDate(r.payload.iat)}</span>
+                      </div>
+                      ${r.payload.opinion
+                        ? html`<p class="review-body">"${r.payload.opinion}"</p>`
+                        : ''}
+                    </div>
+                  `
+                )}
+              `}
+
+        <div class="review-form">
+          <div class="modal-section-title">Your opinion</div>
+          <div class="star-picker">
+            ${STAR_VALUES.map(
+              (v) => html`
+                <button
+                  type="button"
+                  class="star-btn ${displayRating && v <= displayRating ? 'filled' : ''}"
+                  @click=${() => (this.selectedRating = v)}
+                  @mouseenter=${() => (this.hoverRating = v)}
+                  @mouseleave=${() => (this.hoverRating = null)}
+                >
+                  ★
+                </button>
+              `
+            )}
+          </div>
+
+          <textarea
+            class="review-textarea"
+            rows="2"
+            placeholder="What was it like to work from here?"
+            .value=${this.opinion}
+            ?disabled=${this.submitting}
+            @input=${(e: Event) => (this.opinion = (e.target as HTMLTextAreaElement).value)}
+          ></textarea>
+
+          <button
+            class="review-submit-btn"
+            ?disabled=${!this.selectedRating || this.submitting}
+            @click=${this.submit}
+          >
+            ${this.submitting ? 'Submitting…' : 'Submit review'}
+          </button>
+
+          ${this.submitStatus === 'success'
+            ? html`<span class="review-status-success">Thanks for your review!</span>`
+            : this.submitStatus === 'error'
+              ? html`<span class="review-status-error">Couldn't submit, please try again.</span>`
+              : ''}
+
+          <div class="review-privacy-note">
+            Reviews are powered by
+            <a href="https://mangrove.reviews" target="_blank">Mangrove.reviews</a>, an open,
+            decentralized review platform — no account needed.
+          </div>
         </div>
       </div>
     `;
@@ -223,7 +581,23 @@ export class PlaceDetailModal extends LitElement {
       amenities.push({
         icon: '🔌',
         name: 'Power sockets',
-        value: this.place.sockets === 'yes' ? 'Yes' : this.place.sockets === 'many' ? 'Many' : 'Some',
+        value:
+          this.place.sockets === 'yes' ? 'Yes' : this.place.sockets === 'many' ? 'Many' : 'Some',
+      });
+    }
+
+    if (this.place?.wifiSsid) {
+      const feeNote =
+        this.place.wifiFee === 'yes'
+          ? ' (paid)'
+          : this.place.wifiFee === 'customers'
+            ? ' (customers)'
+            : '';
+      const passwordNote = this.place.wifiPassword === 'yes' ? ', password required' : '';
+      amenities.push({
+        icon: '📶',
+        name: 'WiFi network',
+        value: `${this.place.wifiSsid}${feeNote}${passwordNote}`,
       });
     }
 
@@ -252,6 +626,14 @@ export class PlaceDetailModal extends LitElement {
 
     const links = [];
 
+    links.push({
+      label: 'Open in Google Maps',
+      href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+        `${this.place.name},${this.place.latitude},${this.place.longitude}`
+      )}`,
+      target: '_blank',
+    });
+
     if (this.place.osmId) {
       links.push({
         label: 'View on OpenStreetMap',
@@ -261,15 +643,12 @@ export class PlaceDetailModal extends LitElement {
     }
 
     if (this.place.osmId) {
-      const osmId = this.place.osmId.split('/')[1];
       links.push({
         label: 'Edit in MapComplete',
         href: `https://mapcomplete.osm.be/`,
         target: '_blank',
       });
     }
-
-    if (links.length === 0) return html``;
 
     return html`
       <div class="modal-section">

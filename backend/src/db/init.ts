@@ -1,80 +1,48 @@
-import initSqlJs, { Database as SqlJsDatabase } from 'sql.js';
+import knexFactory, { Knex } from 'knex';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dbDir = path.join(__dirname, '../../data');
-const dbPath = path.join(dbDir, 'places.sqlite');
+const dbPath = process.env.DB_PATH || path.join(__dirname, '../../data/places.sqlite');
+const migrationsDir = path.join(__dirname, '../../migrations');
 
-let sqlJs: any = null;
+let db: Knex | null = null;
+let migrated: Promise<void> | null = null;
 
-async function initSql() {
-  if (!sqlJs) {
-    sqlJs = await initSqlJs();
-  }
-  return sqlJs;
-}
-
-export async function initDb(): Promise<SqlJsDatabase> {
-  const SQL = await initSql();
-
-  // Ensure data directory exists
+function createKnex(): Knex {
+  const dbDir = path.dirname(dbPath);
   if (!fs.existsSync(dbDir)) {
     fs.mkdirSync(dbDir, { recursive: true });
   }
 
-  // Load existing DB or create new
-  let db: SqlJsDatabase;
-  if (fs.existsSync(dbPath)) {
-    const filebuffer = fs.readFileSync(dbPath);
-    db = new SQL.Database(filebuffer);
-  } else {
-    db = new SQL.Database();
+  return knexFactory({
+    client: 'better-sqlite3',
+    connection: { filename: dbPath },
+    useNullAsDefault: true,
+    migrations: { directory: migrationsDir, extension: 'ts' },
+  });
+}
+
+export async function initDb(): Promise<Knex> {
+  if (!db) {
+    db = createKnex();
   }
 
-  // Initialize schema
-  db.run(`
-    CREATE TABLE IF NOT EXISTS places (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      category TEXT,
-      latitude REAL NOT NULL,
-      longitude REAL NOT NULL,
-      address TEXT,
-
-      internet_access TEXT,
-      sockets TEXT,
-      opening_hours TEXT,
-
-      osm_id TEXT,
-      osm_tags TEXT,
-      source TEXT DEFAULT 'osm',
-      verified INTEGER DEFAULT 0,
-      verified_by TEXT,
-      last_checked TEXT,
-      last_synced TEXT,
-
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE INDEX IF NOT EXISTS idx_bbox ON places(latitude, longitude);
-    CREATE INDEX IF NOT EXISTS idx_category ON places(category);
-    CREATE INDEX IF NOT EXISTS idx_source ON places(source);
-  `);
+  // Migrations are idempotent and cheap to check, so just run them on every
+  // connect instead of requiring a separate `npm run migrate` step in dev.
+  if (!migrated) {
+    migrated = db.migrate.latest().then(() => undefined);
+  }
+  await migrated;
 
   return db;
 }
 
-export function closeDb(db: SqlJsDatabase): void {
-  // Save to disk
-  const data = db.export();
-  const buffer = Buffer.from(data);
-
-  if (!fs.existsSync(dbDir)) {
-    fs.mkdirSync(dbDir, { recursive: true });
+export async function closeDb(connection: Knex): Promise<void> {
+  await connection.destroy();
+  if (db === connection) {
+    db = null;
+    migrated = null;
   }
-
-  fs.writeFileSync(dbPath, buffer);
 }

@@ -2,6 +2,13 @@ import { LitElement, html, css } from 'lit';
 import { property } from 'lit/decorators.js';
 
 export class MenuNav extends LitElement {
+  @property() declare currentPage: 'map' | 'list' | 'contribute' | 'about';
+
+  constructor() {
+    super();
+    this.currentPage = 'map';
+  }
+
   static styles = css`
     :host {
       position: fixed;
@@ -38,8 +45,6 @@ export class MenuNav extends LitElement {
     }
   `;
 
-  @property() currentPage: 'map' | 'contribute' | 'about' = 'map';
-
   render() {
     return html`
       <button
@@ -47,6 +52,12 @@ export class MenuNav extends LitElement {
         @click=${() => this.changePage('map')}
       >
         🗺️ Map
+      </button>
+      <button
+        class="menu-btn ${this.currentPage === 'list' ? 'active' : ''}"
+        @click=${() => this.changePage('list')}
+      >
+        📋 List
       </button>
       <button
         class="menu-btn ${this.currentPage === 'contribute' ? 'active' : ''}"
@@ -63,7 +74,7 @@ export class MenuNav extends LitElement {
     `;
   }
 
-  private changePage(page: 'map' | 'contribute' | 'about') {
+  private changePage(page: 'map' | 'list' | 'contribute' | 'about') {
     this.currentPage = page;
     this.dispatchEvent(
       new CustomEvent('page-change', {

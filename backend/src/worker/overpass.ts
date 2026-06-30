@@ -3,7 +3,11 @@ import { OverpassResponse, OverpassElement, Place } from '../types.js';
 // Milan bounding box: [south, west, north, east] - wider for testing
 // Covers Milan and surrounding areas
 const MILAN_BBOX = '45.2,8.8,45.7,9.4';
-const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
+const OVERPASS_URLS = [
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter',
+  'https://overpass.openstreetmap.ru/api/interpreter',
+];
 const TIMEOUT = 180;
 
 export async function fetchFromOverpass(): Promise<Place[]> {
@@ -12,46 +16,56 @@ export async function fetchFromOverpass(): Promise<Place[]> {
   console.log('Fetching from Overpass API...');
   console.log(`Query:\n${query}\n`);
 
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT * 1000);
+  let lastError: Error | null = null;
 
-    console.log('📡 Sending request to Overpass API...');
-    const response = await fetch(OVERPASS_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/osm3s',
-        'User-Agent': 'MilanRemoteWorkMap/2.0',
-      },
-      body: query,
-      signal: controller.signal,
-    });
+  for (let i = 0; i < OVERPASS_URLS.length; i++) {
+    const url = OVERPASS_URLS[i];
+    try {
+      console.log(`📡 Trying Overpass instance ${i + 1}/${OVERPASS_URLS.length}: ${url}`);
 
-    clearTimeout(timeoutId);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), TIMEOUT * 1000);
 
-    if (!response.ok) {
-      const text = await response.text();
-      console.error(`Response status: ${response.status}`);
-      console.error(`Response body: ${text.substring(0, 500)}`);
-      throw new Error(`Overpass API error: ${response.status} ${response.statusText}`);
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/osm3s',
+          'User-Agent': 'MilanRemoteWorkMap/2.0',
+        },
+        body: query,
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        console.warn(`Instance ${i + 1} failed: ${response.status} ${response.statusText}`);
+        lastError = new Error(`Overpass API error: ${response.status} ${response.statusText}`);
+        continue; // Try next instance
+      }
+
+      console.log('✓ Response OK, parsing JSON...');
+      const data = (await response.json()) as OverpassResponse;
+      console.log(`✓ Fetched ${data.elements.length} elements from Overpass`);
+
+      if (data.elements.length === 0) {
+        console.log('⚠️  No elements found. This could mean:');
+        console.log('  - Data not yet indexed in Overpass (wait 5-60 mins)');
+        console.log('  - Places outside bbox');
+        console.log('  - Tag not yet in Overpass');
+      }
+
+      return parseElements(data.elements);
+    } catch (error) {
+      console.warn(`Instance ${i + 1} error:`, (error as Error).message);
+      lastError = error as Error;
+      // Continue to next instance
     }
-
-    console.log('✓ Response OK, parsing JSON...');
-    const data = (await response.json()) as OverpassResponse;
-    console.log(`✓ Fetched ${data.elements.length} elements from Overpass`);
-
-    if (data.elements.length === 0) {
-      console.log('⚠️  No elements found. This could mean:');
-      console.log('  - Data not yet indexed in Overpass (wait 5-60 mins)');
-      console.log('  - Places outside bbox');
-      console.log('  - Tag not yet in Overpass');
-    }
-
-    return parseElements(data.elements);
-  } catch (error) {
-    console.error('❌ Error fetching from Overpass:', error);
-    throw error;
   }
+
+  // All instances failed
+  console.error('❌ All Overpass instances failed');
+  throw lastError || new Error('All Overpass API instances failed');
 }
 
 function buildQuery(): string {
@@ -111,9 +125,14 @@ function elementToPlace(element: OverpassElement): Place | null {
     latitude: lat,
     longitude: lon,
     address: formatAddress(tags),
+    city: tags['addr:city'],
     internetAccess: normalizeInternetAccess(tags.internet_access),
-    sockets: normalizeSockets(tags.sockets),
+    sockets: normalizeSockets(tags.sockets ?? tags.socket ?? tags.power_supply),
     openingHours: tags.opening_hours,
+    laptopConditional: tags['laptop:conditional'],
+    wifiSsid: tags['internet_access:ssid'],
+    wifiFee: normalizeWifiFee(tags['internet_access:fee']),
+    wifiPassword: normalizeYesNo(tags['internet_access:password']),
     osmId: `${element.type}/${element.id}`,
     osmTags: tags,
     source: 'osm',
@@ -152,6 +171,23 @@ function normalizeSockets(value: string | undefined): 'yes' | 'no' | 'many' | un
   const lower = value.toLowerCase();
   if (lower === 'yes' || lower === 'true') return 'yes';
   if (lower === 'many' || lower === 'lots') return 'many';
+  if (lower === 'no' || lower === 'false') return 'no';
+  return undefined;
+}
+
+function normalizeYesNo(value: string | undefined): 'yes' | 'no' | undefined {
+  if (!value) return undefined;
+  const lower = value.toLowerCase();
+  if (lower === 'yes' || lower === 'true') return 'yes';
+  if (lower === 'no' || lower === 'false') return 'no';
+  return undefined;
+}
+
+function normalizeWifiFee(value: string | undefined): 'yes' | 'no' | 'customers' | undefined {
+  if (!value) return undefined;
+  const lower = value.toLowerCase();
+  if (lower === 'customers') return 'customers';
+  if (lower === 'yes' || lower === 'true') return 'yes';
   if (lower === 'no' || lower === 'false') return 'no';
   return undefined;
 }

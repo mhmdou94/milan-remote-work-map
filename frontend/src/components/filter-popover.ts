@@ -2,6 +2,25 @@ import { LitElement, html, css } from 'lit';
 import { state } from 'lit/decorators.js';
 
 export class FilterPopover extends LitElement {
+  @state() declare open: boolean;
+  @state() declare filters: {
+    internetAccess: boolean;
+    sockets: boolean;
+    openNow: boolean;
+    showRemoved: boolean;
+  };
+
+  constructor() {
+    super();
+    this.open = false;
+    this.filters = {
+      internetAccess: false,
+      sockets: false,
+      openNow: false,
+      showRemoved: false,
+    };
+  }
+
   static styles = css`
     :host {
       position: fixed;
@@ -109,24 +128,12 @@ export class FilterPopover extends LitElement {
     }
   `;
 
-  @state() open = false;
-  @state() filters = {
-    internetAccess: false,
-    sockets: false,
-    openNow: false,
-  };
-
   render() {
     const activeCount = Object.values(this.filters).filter(Boolean).length;
 
     return html`
-      <button
-        class="filter-btn"
-        @click=${this.toggleOpen}
-        title="Toggle filters"
-      >
-        🔽
-        ${activeCount > 0 ? html` <span class="filter-badge">${activeCount}</span> ` : ''}
+      <button class="filter-btn" @click=${this.toggleOpen} title="Toggle filters">
+        🔽 ${activeCount > 0 ? html` <span class="filter-badge">${activeCount}</span> ` : ''}
       </button>
 
       ${this.open
@@ -144,7 +151,8 @@ export class FilterPopover extends LitElement {
                   <input
                     type="checkbox"
                     .checked=${this.filters.internetAccess}
-                    @change=${(e: Event) => this.updateFilter('internetAccess', (e.target as HTMLInputElement).checked)}
+                    @change=${(e: Event) =>
+                      this.updateFilter('internetAccess', (e.target as HTMLInputElement).checked)}
                   />
                   <span class="filter-label">Has internet access</span>
                 </label>
@@ -153,7 +161,8 @@ export class FilterPopover extends LitElement {
                   <input
                     type="checkbox"
                     .checked=${this.filters.sockets}
-                    @change=${(e: Event) => this.updateFilter('sockets', (e.target as HTMLInputElement).checked)}
+                    @change=${(e: Event) =>
+                      this.updateFilter('sockets', (e.target as HTMLInputElement).checked)}
                   />
                   <span class="filter-label">Has power sockets</span>
                 </label>
@@ -162,9 +171,20 @@ export class FilterPopover extends LitElement {
                   <input
                     type="checkbox"
                     .checked=${this.filters.openNow}
-                    @change=${(e: Event) => this.updateFilter('openNow', (e.target as HTMLInputElement).checked)}
+                    @change=${(e: Event) =>
+                      this.updateFilter('openNow', (e.target as HTMLInputElement).checked)}
                   />
                   <span class="filter-label">Open now</span>
+                </label>
+
+                <label class="filter-item">
+                  <input
+                    type="checkbox"
+                    .checked=${this.filters.showRemoved}
+                    @change=${(e: Event) =>
+                      this.updateFilter('showRemoved', (e.target as HTMLInputElement).checked)}
+                  />
+                  <span class="filter-label">Show recently removed</span>
                 </label>
               </div>
             </div>
@@ -187,6 +207,7 @@ export class FilterPopover extends LitElement {
       internetAccess: false,
       sockets: false,
       openNow: false,
+      showRemoved: false,
     };
     this.emitFilters();
   }
