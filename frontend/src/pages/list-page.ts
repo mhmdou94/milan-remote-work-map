@@ -44,107 +44,164 @@ export class ListPage extends LitElement {
         flex-wrap: wrap;
         gap: 16px;
         align-items: flex-end;
-        background: #f9f9f9;
-        border-radius: 8px;
-        padding: 16px;
-        margin-bottom: 20px;
+        background: var(--color-bg-soft, #f7fafc);
+        border: 1px solid var(--color-border, #d7e0e8);
+        border-radius: var(--radius-lg, 20px);
+        padding: 18px;
+        margin-bottom: 22px;
       }
 
       .field {
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 6px;
       }
 
       .field label {
-        font-size: 13px;
-        font-weight: 600;
-        color: #555;
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--color-text-faint, #667483);
       }
 
       select {
-        padding: 8px 10px;
-        border-radius: 4px;
-        border: 1px solid #ccc;
+        min-height: 42px;
+        padding: 8px 12px;
+        border-radius: var(--radius-md, 14px);
+        border: 1px solid var(--color-border, #d7e0e8);
+        background: white;
         font-size: 14px;
         min-width: 180px;
       }
 
+      select:focus {
+        outline: none;
+        border-color: var(--color-primary, #006cff);
+      }
+
       .checkbox-group {
         display: flex;
-        gap: 16px;
+        gap: 8px;
         flex-wrap: wrap;
       }
 
       .checkbox-field {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 14px;
-        cursor: pointer;
+        position: relative;
+        display: block;
       }
 
       .checkbox-field input[type='checkbox'] {
+        position: absolute;
+        inset: 0;
+        margin: 0;
+        opacity: 0;
         cursor: pointer;
-        width: 16px;
-        height: 16px;
-        accent-color: #1976d2;
+      }
+
+      .checkbox-pill {
+        display: inline-flex;
+        align-items: center;
+        min-height: 36px;
+        border-radius: var(--radius-md, 14px);
+        border: 1px solid var(--color-border, #d7e0e8);
+        background: white;
+        color: var(--color-text, #17212b);
+        padding: 8px 14px;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .checkbox-field input[type='checkbox']:checked + .checkbox-pill {
+        border-color: var(--color-primary, #006cff);
+        background: var(--color-primary, #006cff);
+        color: white;
+        box-shadow: var(--shadow-button, 0 8px 18px rgba(0, 108, 255, 0.22));
       }
 
       .search-btn {
-        background: #1976d2;
+        background: var(--color-primary, #006cff);
         color: white;
         border: none;
-        border-radius: 4px;
-        padding: 9px 20px;
+        border-radius: var(--radius-md, 14px);
+        padding: 10px 22px;
         font-size: 14px;
-        font-weight: 600;
+        font-weight: 800;
         cursor: pointer;
+        box-shadow: var(--shadow-button, 0 8px 18px rgba(0, 108, 255, 0.22));
       }
 
       .search-btn:disabled {
         background: #bbb;
         cursor: not-allowed;
+        box-shadow: none;
       }
 
       .status-message {
-        color: #666;
+        color: var(--color-text-muted, #51606f);
         padding: 20px 0;
       }
 
       .error-message {
-        color: #d32f2f;
+        color: var(--color-danger, #b42318);
         padding: 12px 0;
+        font-weight: 600;
       }
 
       .results-list {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 10px;
       }
 
       .result-item {
+        position: relative;
         display: flex;
         align-items: center;
-        gap: 12px;
-        padding: 12px;
-        border: 1px solid #eee;
-        border-radius: 8px;
+        gap: 14px;
+        padding: 14px 16px 14px 20px;
+        border: 1px solid var(--color-border, #d7e0e8);
+        border-radius: var(--radius-lg, 20px);
         cursor: pointer;
         background: white;
         text-align: left;
         width: 100%;
         font: inherit;
+        box-shadow: var(--shadow-card, 0 12px 32px rgba(15, 23, 42, 0.08));
+        transition:
+          transform 0.15s ease,
+          border-color 0.15s ease;
+        overflow: hidden;
+      }
+
+      .result-item::before {
+        content: '';
+        position: absolute;
+        top: 10px;
+        bottom: 10px;
+        left: 8px;
+        width: 4px;
+        border-radius: 999px;
+        background: var(--accent-color, #4b5563);
       }
 
       .result-item:hover {
-        background: #f5f5f5;
-        border-color: #ddd;
+        border-color: var(--color-primary, #006cff);
+        transform: translateY(-1px);
       }
 
       .result-emoji {
-        font-size: 24px;
         flex-shrink: 0;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        border-radius: 50%;
+        background: color-mix(in srgb, var(--accent-color, #4b5563) 16%, white);
       }
 
       .result-info {
@@ -153,13 +210,14 @@ export class ListPage extends LitElement {
       }
 
       .result-name {
-        font-weight: 600;
+        font-weight: 800;
         font-size: 15px;
+        color: var(--color-text, #17212b);
       }
 
       .result-address {
         font-size: 13px;
-        color: #777;
+        color: var(--color-text-muted, #51606f);
         margin-top: 2px;
       }
 
@@ -218,7 +276,7 @@ export class ListPage extends LitElement {
                 @change=${(e: Event) =>
                   this.updateFilter('internetAccess', (e.target as HTMLInputElement).checked)}
               />
-              Has internet access
+              <span class="checkbox-pill">📡 Has internet access</span>
             </label>
             <label class="checkbox-field">
               <input
@@ -227,7 +285,7 @@ export class ListPage extends LitElement {
                 @change=${(e: Event) =>
                   this.updateFilter('sockets', (e.target as HTMLInputElement).checked)}
               />
-              Has power sockets
+              <span class="checkbox-pill">🔌 Has power sockets</span>
             </label>
             <label class="checkbox-field">
               <input
@@ -236,7 +294,7 @@ export class ListPage extends LitElement {
                 @change=${(e: Event) =>
                   this.updateFilter('openNow', (e.target as HTMLInputElement).checked)}
               />
-              Open now
+              <span class="checkbox-pill">🕒 Open now</span>
             </label>
           </div>
 
@@ -265,9 +323,13 @@ export class ListPage extends LitElement {
     return html`
       <div class="results-list">
         ${this.results.map((place) => {
-          const { emoji } = getCategoryInfo(place.category);
+          const { emoji, color } = getCategoryInfo(place.category);
           return html`
-            <button class="result-item" @click=${() => this.selectPlace(place)}>
+            <button
+              class="result-item"
+              style="--accent-color: ${color};"
+              @click=${() => this.selectPlace(place)}
+            >
               <span class="result-emoji">${emoji}</span>
               <span class="result-info">
                 <div class="result-name">${place.name}</div>

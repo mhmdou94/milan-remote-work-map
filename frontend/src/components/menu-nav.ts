@@ -1,81 +1,142 @@
 import { LitElement, html, css } from 'lit';
-import { property } from 'lit/decorators.js';
+import { property, state } from 'lit/decorators.js';
+
+const PAGES: { id: 'map' | 'list' | 'contribute' | 'about'; label: string; icon: string }[] = [
+  { id: 'map', label: 'Map', icon: '🗺️' },
+  { id: 'list', label: 'List', icon: '📋' },
+  { id: 'contribute', label: 'Contribute', icon: '➕' },
+  { id: 'about', label: 'About', icon: 'ℹ️' },
+];
 
 export class MenuNav extends LitElement {
   @property() declare currentPage: 'map' | 'list' | 'contribute' | 'about';
+  @state() declare open: boolean;
 
   constructor() {
     super();
     this.currentPage = 'map';
+    this.open = false;
   }
 
   static styles = css`
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
     :host {
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      background: white;
-      border-bottom: 1px solid #eee;
-      padding: 12px;
-      z-index: 400;
-      display: flex;
-      gap: 8px;
+      top: 16px;
+      left: 16px;
+      z-index: 700;
+      font-family:
+        -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     }
 
-    .menu-btn {
-      background: none;
+    .menu-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      border: 1px solid var(--color-border, #d7e0e8);
+      border-radius: var(--radius-md, 14px);
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: var(--shadow-card, 0 12px 32px rgba(15, 23, 42, 0.08));
+      backdrop-filter: blur(6px);
+      cursor: pointer;
+      font-size: 19px;
+    }
+
+    .menu-toggle:hover {
+      border-color: var(--color-primary, #006cff);
+    }
+
+    .menu-panel {
+      position: absolute;
+      top: 52px;
+      left: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 190px;
+      padding: 6px;
+      border: 1px solid var(--color-border, #d7e0e8);
+      border-radius: var(--radius-lg, 20px);
+      background: rgba(255, 255, 255, 0.97);
+      box-shadow: var(--shadow-popover, 0 22px 70px rgba(15, 23, 42, 0.16));
+      backdrop-filter: blur(8px);
+    }
+
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
       border: none;
-      padding: 8px 16px;
+      background: none;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm, 8px);
       cursor: pointer;
       font-size: 14px;
-      font-weight: 500;
-      border-radius: 4px;
-      color: #666;
-      transition: all 0.2s ease;
+      font-weight: 700;
+      color: var(--color-text-muted, #51606f);
+      text-align: left;
     }
 
-    .menu-btn:hover {
-      background: #f5f5f5;
+    .menu-item:hover {
+      background: var(--color-bg-chip, #eef3f7);
     }
 
-    .menu-btn.active {
-      background: #e3f2fd;
-      color: #1976d2;
+    .menu-item.active {
+      background: var(--color-primary, #006cff);
+      color: white;
+    }
+
+    .menu-icon {
+      font-size: 16px;
+      line-height: 1;
     }
   `;
 
   render() {
     return html`
       <button
-        class="menu-btn ${this.currentPage === 'map' ? 'active' : ''}"
-        @click=${() => this.changePage('map')}
+        class="menu-toggle"
+        @click=${this.toggleOpen}
+        aria-label="Open navigation menu"
+        aria-expanded=${this.open}
       >
-        🗺️ Map
+        ${this.open ? '✕' : '☰'}
       </button>
-      <button
-        class="menu-btn ${this.currentPage === 'list' ? 'active' : ''}"
-        @click=${() => this.changePage('list')}
-      >
-        📋 List
-      </button>
-      <button
-        class="menu-btn ${this.currentPage === 'contribute' ? 'active' : ''}"
-        @click=${() => this.changePage('contribute')}
-      >
-        ➕ Contribute
-      </button>
-      <button
-        class="menu-btn ${this.currentPage === 'about' ? 'active' : ''}"
-        @click=${() => this.changePage('about')}
-      >
-        ℹ️ About
-      </button>
+
+      ${this.open
+        ? html`
+            <nav class="menu-panel">
+              ${PAGES.map(
+                (page) => html`
+                  <button
+                    class="menu-item ${this.currentPage === page.id ? 'active' : ''}"
+                    @click=${() => this.changePage(page.id)}
+                  >
+                    <span class="menu-icon">${page.icon}</span>
+                    ${page.label}
+                  </button>
+                `
+              )}
+            </nav>
+          `
+        : ''}
     `;
+  }
+
+  private toggleOpen() {
+    this.open = !this.open;
   }
 
   private changePage(page: 'map' | 'list' | 'contribute' | 'about') {
     this.currentPage = page;
+    this.open = false;
     this.dispatchEvent(
       new CustomEvent('page-change', {
         detail: page,

@@ -10,10 +10,13 @@ import {
   TRANSIT_KIND_ORDER,
 } from '../lib/transit.js';
 import { googleMapsIcon, appleMapsIcon, osmIcon } from '../lib/icons.js';
+import { getCategoryInfo } from '../categories.js';
 
 const STAR_VALUES = [20, 40, 60, 80, 100];
 const NEARBY_RADIUS_METERS = 500;
 const NEARBY_VISIBLE_PER_KIND = 3;
+
+type Tone = 'good' | 'neutral' | 'unknown';
 
 export class PlaceDetailModal extends LitElement {
   @property() declare place: Place | null;
@@ -50,34 +53,59 @@ export class PlaceDetailModal extends LitElement {
   }
 
   static styles = css`
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
     :host {
       position: fixed;
       bottom: 0;
       left: 0;
       right: 0;
-      z-index: 600;
+      z-index: 750;
+      font-family:
+        -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+
+    @media (min-width: 861px) {
+      :host {
+        top: auto;
+        bottom: 16px;
+        left: auto;
+        right: 16px;
+        width: min(390px, calc(100% - 32px));
+      }
     }
 
     .modal-backdrop {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: white;
-      border-radius: 12px 12px 0 0;
-      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+      background: rgba(255, 255, 255, 0.97);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--color-border, #d7e0e8);
+      border-radius: var(--radius-xl, 26px) var(--radius-xl, 26px) 0 0;
+      box-shadow: var(--shadow-popover, 0 22px 70px rgba(15, 23, 42, 0.16));
       padding: 20px;
-      max-height: 80vh;
+      max-height: 85vh;
       overflow-y: auto;
-      animation: slideUp 0.3s ease-out;
+      animation: slideUp 0.25s ease-out;
+    }
+
+    @media (min-width: 861px) {
+      .modal-backdrop {
+        border-radius: var(--radius-xl, 26px);
+        max-height: calc(100vh - 32px);
+      }
     }
 
     @keyframes slideUp {
       from {
-        transform: translateY(100%);
+        transform: translateY(40px);
+        opacity: 0;
       }
       to {
         transform: translateY(0);
+        opacity: 1;
       }
     }
 
@@ -85,39 +113,54 @@ export class PlaceDetailModal extends LitElement {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
+      gap: 12px;
       margin-bottom: 16px;
-      border-bottom: 1px solid #eee;
-      padding-bottom: 12px;
     }
 
     .modal-title {
-      font-size: 20px;
-      font-weight: 700;
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      color: var(--color-text, #17212b);
     }
 
     .modal-category {
-      font-size: 12px;
-      color: #666;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 800;
       text-transform: uppercase;
-      margin-top: 4px;
+      letter-spacing: 0.06em;
+      background: var(--category-bg, #eef3f7);
+      color: var(--category-color, #344252);
+    }
+
+    .modal-category-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--category-color, #344252);
     }
 
     .close-btn {
-      background: none;
-      border: none;
-      font-size: 24px;
+      flex: none;
+      background: white;
+      border: 1px solid var(--color-border, #d7e0e8);
+      border-radius: var(--radius-md, 14px);
+      font-size: 13px;
+      font-weight: 800;
       cursor: pointer;
-      padding: 0;
-      width: 32px;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #999;
+      padding: 8px 14px;
+      color: var(--color-text, #17212b);
     }
 
     .close-btn:hover {
-      color: #333;
+      border-color: var(--color-primary, #006cff);
     }
 
     .modal-content {
@@ -133,16 +176,16 @@ export class PlaceDetailModal extends LitElement {
     }
 
     .modal-section-title {
-      font-size: 12px;
-      font-weight: 700;
+      font-size: 11px;
+      font-weight: 800;
       text-transform: uppercase;
-      color: #666;
-      letter-spacing: 0.04em;
+      color: var(--color-text-faint, #667483);
+      letter-spacing: 0.08em;
     }
 
     .address {
       font-size: 14px;
-      color: #333;
+      color: var(--color-text-muted, #51606f);
     }
 
     .amenities {
@@ -154,25 +197,29 @@ export class PlaceDetailModal extends LitElement {
     .amenity {
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 8px;
-      background: #f5f5f5;
-      border-radius: 4px;
+      gap: 10px;
+      padding: 10px 12px;
+      background: var(--tone-bg, #f7fafc);
+      border: 1px solid var(--tone-border, #e3e8ef);
+      border-radius: var(--radius-md, 14px);
       font-size: 14px;
     }
 
     .amenity-icon {
       font-size: 16px;
+      flex: none;
     }
 
     .amenity-name {
-      font-weight: 500;
+      font-weight: 700;
       flex: 1;
+      color: var(--color-text, #17212b);
     }
 
     .amenity-value {
-      color: #666;
+      color: var(--tone-text, #51606f);
       font-size: 12px;
+      font-weight: 700;
     }
 
     .amenity-nav {
@@ -184,14 +231,14 @@ export class PlaceDetailModal extends LitElement {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 22px;
-      height: 22px;
-      background: #e8e8e8;
-      border-radius: 4px;
+      width: 24px;
+      height: 24px;
+      background: var(--color-bg-chip, #eef3f7);
+      border-radius: var(--radius-sm, 8px);
     }
 
     .nav-icon:hover {
-      background: #ddd;
+      background: var(--color-border, #d7e0e8);
     }
 
     .nearby-group {
@@ -205,17 +252,19 @@ export class PlaceDetailModal extends LitElement {
     }
 
     .nearby-group .amenity {
-      padding: 6px 8px;
+      padding: 7px 10px;
+      --tone-bg: var(--color-bg-soft, #f7fafc);
+      --tone-border: var(--color-border-soft, #e3eaf1);
     }
 
     .nearby-group-title {
       font-size: 12px;
-      font-weight: 600;
-      color: #555;
+      font-weight: 700;
+      color: var(--color-text-muted, #51606f);
     }
 
     .nearby-more-hint {
-      color: #999;
+      color: var(--color-text-faint, #667483);
       font-size: 11px;
       margin-left: 4px;
     }
@@ -224,9 +273,9 @@ export class PlaceDetailModal extends LitElement {
       align-self: flex-start;
       background: none;
       border: none;
-      color: #1976d2;
+      color: var(--color-primary, #006cff);
       font-size: 12px;
-      font-weight: 600;
+      font-weight: 800;
       cursor: pointer;
       padding: 4px 0;
     }
@@ -243,17 +292,18 @@ export class PlaceDetailModal extends LitElement {
 
     .removed-notice {
       background: #fdecea;
-      color: #d32f2f;
-      padding: 8px 10px;
-      border-radius: 4px;
+      color: var(--color-danger, #b42318);
+      padding: 10px 12px;
+      border-radius: var(--radius-md, 14px);
       font-size: 13px;
+      font-weight: 600;
     }
 
     .restriction-notice {
       background: #fff3e0;
       color: #b26a00;
-      padding: 8px 10px;
-      border-radius: 4px;
+      padding: 10px 12px;
+      border-radius: var(--radius-md, 14px);
       font-size: 13px;
     }
 
@@ -266,8 +316,8 @@ export class PlaceDetailModal extends LitElement {
     .unverified-notice {
       background: #eef3fc;
       color: #1f4f8f;
-      padding: 10px 12px;
-      border-radius: 4px;
+      padding: 12px 14px;
+      border-radius: var(--radius-md, 14px);
       font-size: 13px;
       line-height: 1.5;
     }
@@ -279,47 +329,50 @@ export class PlaceDetailModal extends LitElement {
     }
 
     .link-btn {
-      background: #1976d2;
-      color: white;
-      border: none;
-      padding: 10px;
-      border-radius: 4px;
+      background: white;
+      color: var(--color-primary, #006cff);
+      border: 1px solid var(--color-primary, #006cff);
+      padding: 11px;
+      border-radius: var(--radius-md, 14px);
       cursor: pointer;
-      font-size: 14px;
-      font-weight: 500;
+      font-size: 13px;
+      font-weight: 800;
       text-decoration: none;
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       text-align: center;
     }
 
     .link-btn:hover {
-      background: #1565c0;
+      background: #f2f7ff;
     }
 
-    .link-btn.secondary {
-      background: white;
-      color: #1976d2;
-      border: 1px solid #1976d2;
+    .link-btn.primary {
+      background: var(--color-primary, #006cff);
+      color: white;
+      border-color: var(--color-primary, #006cff);
+      box-shadow: var(--shadow-button, 0 8px 18px rgba(0, 108, 255, 0.22));
     }
 
-    .link-btn.secondary:hover {
-      background: #f5f5f5;
+    .link-btn.primary:hover {
+      background: var(--color-primary-dark, #005ad6);
     }
 
     .review-aggregate {
       display: flex;
       align-items: center;
       gap: 12px;
-      background: #f3f4f6;
-      border: 1px solid #e5e7eb;
-      border-radius: 10px;
-      padding: 10px 14px;
+      background: var(--color-bg-soft, #f7fafc);
+      border: 1px solid var(--color-border-soft, #e3eaf1);
+      border-radius: var(--radius-md, 14px);
+      padding: 12px 14px;
     }
 
     .review-score {
       font-size: 26px;
-      font-weight: 700;
-      color: #1f2937;
+      font-weight: 800;
+      color: var(--color-text, #17212b);
       line-height: 1;
     }
 
@@ -332,13 +385,14 @@ export class PlaceDetailModal extends LitElement {
     }
 
     .review-count {
-      color: #666;
+      color: var(--color-text-muted, #51606f);
       font-size: 11px;
+      font-weight: 600;
     }
 
     .review-card {
-      border: 1px solid #e5e7eb;
-      border-radius: 10px;
+      border: 1px solid var(--color-border-soft, #e3eaf1);
+      border-radius: var(--radius-md, 14px);
       padding: 10px 12px;
       font-size: 13px;
     }
@@ -352,20 +406,20 @@ export class PlaceDetailModal extends LitElement {
 
     .review-date {
       font-size: 11px;
-      color: #9ca3af;
+      color: var(--color-text-faint, #667483);
     }
 
     .review-body {
       margin: 0;
-      color: #1f2937;
+      color: var(--color-text, #17212b);
       line-height: 1.5;
     }
 
     .review-form {
-      border: 1px dashed #e5e7eb;
-      border-radius: 10px;
-      padding: 12px 14px;
-      background: #f9fafb;
+      border: 1px dashed var(--color-border, #d7e0e8);
+      border-radius: var(--radius-md, 14px);
+      padding: 14px;
+      background: var(--color-bg-soft, #f7fafc);
       display: flex;
       flex-direction: column;
       gap: 8px;
@@ -392,62 +446,95 @@ export class PlaceDetailModal extends LitElement {
 
     .review-textarea {
       font-size: 13px;
-      padding: 8px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
+      padding: 9px;
+      border: 1px solid var(--color-border, #d7e0e8);
+      border-radius: var(--radius-sm, 8px);
       resize: none;
       font-family: inherit;
     }
 
     .review-submit-btn {
-      background: #10b981;
+      background: var(--color-primary, #006cff);
       color: white;
       border: none;
-      padding: 8px;
-      border-radius: 4px;
+      padding: 9px;
+      border-radius: var(--radius-sm, 8px);
       cursor: pointer;
       font-size: 13px;
-      font-weight: 500;
+      font-weight: 800;
+      box-shadow: var(--shadow-button, 0 8px 18px rgba(0, 108, 255, 0.22));
     }
 
     .review-submit-btn:disabled {
-      opacity: 0.6;
+      opacity: 0.5;
       cursor: not-allowed;
+      box-shadow: none;
     }
 
     .review-status-success {
-      color: #10b981;
+      color: var(--color-good-text, #006b55);
       font-size: 12px;
+      font-weight: 600;
     }
 
     .review-status-error {
-      color: #d32f2f;
+      color: var(--color-danger, #b42318);
       font-size: 12px;
+      font-weight: 600;
     }
 
     .review-privacy-note {
       font-size: 11px;
-      color: #999;
+      color: var(--color-text-faint, #667483);
     }
 
     .review-privacy-note a {
-      color: #666;
+      color: var(--color-text-muted, #51606f);
+    }
+
+    .action-row {
+      position: sticky;
+      bottom: -20px;
+      margin: 4px -20px -20px;
+      padding: 12px 20px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(6px);
+      border-top: 1px solid var(--color-border-soft, #e3eaf1);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .action-row .link-btn:only-child {
+      grid-column: 1 / -1;
     }
   `;
 
   render() {
     if (!this.place) return html``;
 
+    const categoryInfo = getCategoryInfo(this.place.category);
+
     return html`
-      <div class="modal-backdrop">
+      <div
+        class="modal-backdrop"
+        style="--category-color:${categoryInfo.color}; --category-bg:${categoryInfo.color}1a;"
+      >
         <div class="modal-header">
           <div>
             <div class="modal-title">${this.place.name}</div>
             ${this.place.category
-              ? html` <div class="modal-category">${this.place.category}</div> `
+              ? html`
+                  <div class="modal-category">
+                    <span class="modal-category-dot"></span>
+                    ${categoryInfo.label}
+                  </div>
+                `
               : ''}
           </div>
-          <button class="close-btn" @click=${this.close}>✕</button>
+          <button class="close-btn" @click=${this.close} aria-label="Close place detail">
+            Close
+          </button>
         </div>
 
         <div class="modal-content">
@@ -494,8 +581,10 @@ export class PlaceDetailModal extends LitElement {
                 </div>
               `
             : ''}
-          ${this.renderNearbyTransit()} ${this.renderReviews()} ${this.renderLinks()}
+          ${this.renderNearbyTransit()} ${this.renderReviews()}
         </div>
+
+        ${this.renderActionRow()}
       </div>
     `;
   }
@@ -610,9 +699,11 @@ export class PlaceDetailModal extends LitElement {
         <div class="modal-section-title">Reviews</div>
 
         ${this.reviewsLoading
-          ? html`<small style="color: #999;">Loading reviews…</small>`
+          ? html`<small style="color: var(--color-text-faint, #667483);">Loading reviews…</small>`
           : this.reviewsError
-            ? html`<small style="color: #999;">Couldn't load reviews.</small>`
+            ? html`<small style="color: var(--color-text-faint, #667483);"
+                >Couldn't load reviews.</small
+              >`
             : html`
                 ${avgRating !== null
                   ? html`
@@ -626,7 +717,9 @@ export class PlaceDetailModal extends LitElement {
                         </div>
                       </div>
                     `
-                  : html`<small style="color: #999;">No reviews yet — be the first!</small>`}
+                  : html`<small style="color: var(--color-text-faint, #667483);"
+                      >No reviews yet — be the first!</small
+                    >`}
                 ${this.reviews.map(
                   (r) => html`
                     <div class="review-card">
@@ -700,7 +793,7 @@ export class PlaceDetailModal extends LitElement {
       return html`
         <div class="modal-section">
           <div class="modal-section-title">Nearby</div>
-          <small style="color: #999;">Loading nearby transit…</small>
+          <small style="color: var(--color-text-faint, #667483);">Loading nearby transit…</small>
         </div>
       `;
     }
@@ -785,13 +878,14 @@ export class PlaceDetailModal extends LitElement {
   }
 
   private renderAmenities() {
-    const amenities = [];
+    const amenities: { icon: string; name: string; value: string; tone: Tone }[] = [];
 
     if (this.place?.internetAccess) {
       amenities.push({
         icon: '📡',
         name: 'Internet',
         value: this.place.internetAccess === 'yes' ? 'Yes' : 'Wired',
+        tone: 'good',
       });
     }
 
@@ -801,6 +895,7 @@ export class PlaceDetailModal extends LitElement {
         name: 'Power sockets',
         value:
           this.place.sockets === 'yes' ? 'Yes' : this.place.sockets === 'many' ? 'Many' : 'Some',
+        tone: this.place.sockets === 'many' || this.place.sockets === 'yes' ? 'good' : 'neutral',
       });
     }
 
@@ -816,6 +911,7 @@ export class PlaceDetailModal extends LitElement {
         icon: '📶',
         name: 'WiFi network',
         value: `${this.place.wifiSsid}${feeNote}${passwordNote}`,
+        tone: 'neutral',
       });
     }
 
@@ -824,61 +920,67 @@ export class PlaceDetailModal extends LitElement {
     return html`
       <div class="modal-section">
         <div class="modal-section-title">Amenities</div>
-        <div class="amenities">
-          ${amenities.map(
-            (a) => html`
-              <div class="amenity">
-                <span class="amenity-icon">${a.icon}</span>
-                <span class="amenity-name">${a.name}</span>
-                <span class="amenity-value">${a.value}</span>
-              </div>
-            `
-          )}
-        </div>
+        <div class="amenities">${amenities.map((a) => this.renderAmenity(a))}</div>
       </div>
     `;
   }
 
-  private renderLinks() {
+  private renderAmenity(a: { icon: string; name: string; value: string; tone: Tone }) {
+    const toneVars: Record<Tone, string> = {
+      good: '--tone-bg: var(--color-good-bg, #effbf6); --tone-border: var(--color-good-border, #c7eadc); --tone-text: var(--color-good-text, #006b55);',
+      neutral:
+        '--tone-bg: var(--color-bg-soft, #f7fafc); --tone-border: #dce5ee; --tone-text: #344252;',
+      unknown:
+        '--tone-bg: var(--color-bg-soft, #f7fafc); --tone-border: #e3e8ef; --tone-text: var(--color-text-faint, #667483);',
+    };
+
+    return html`
+      <div class="amenity" style=${toneVars[a.tone]}>
+        <span class="amenity-icon">${a.icon}</span>
+        <span class="amenity-name">${a.name}</span>
+        <span class="amenity-value">${a.value}</span>
+      </div>
+    `;
+  }
+
+  private renderActionRow() {
     if (!this.place) return html``;
 
-    const links = [];
+    const links: { label: string; href: string; primary?: boolean }[] = [];
 
     links.push({
       label: 'Open in Google Maps',
       href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
         `${this.place.name},${this.place.latitude},${this.place.longitude}`
       )}`,
-      target: '_blank',
+      primary: true,
     });
 
     if (this.place.osmId) {
       links.push({
-        label: 'View on OpenStreetMap',
+        label: 'View on OSM',
         href: `https://www.openstreetmap.org/${this.place.osmId}`,
-        target: '_blank',
       });
-    }
-
-    if (this.place.osmId) {
       links.push({
         label: 'Edit in MapComplete',
         href: `https://mapcomplete.osm.be/`,
-        target: '_blank',
       });
     }
 
     return html`
-      <div class="modal-section">
-        <div class="links">
-          ${links.map(
-            (link) => html`
-              <a class="link-btn secondary" href=${link.href} target=${link.target}>
-                ${link.label}
-              </a>
-            `
-          )}
-        </div>
+      <div class="action-row">
+        ${links.map(
+          (link) => html`
+            <a
+              class="link-btn ${link.primary ? 'primary' : ''}"
+              href=${link.href}
+              target="_blank"
+              rel="noopener"
+            >
+              ${link.label}
+            </a>
+          `
+        )}
       </div>
     `;
   }

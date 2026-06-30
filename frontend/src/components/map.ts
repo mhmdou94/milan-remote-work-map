@@ -22,6 +22,12 @@ const LEAFLET_CSS = html`
 
 export class MapComponent extends LitElement {
   static styles = css`
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
     :host {
       display: block;
       width: 100%;
@@ -42,25 +48,29 @@ export class MapComponent extends LitElement {
     }
 
     .emoji-marker {
-      font-size: 22px;
-      line-height: 32px;
-      text-align: center;
-      width: 32px;
-      height: 32px;
-      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+      width: 34px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      line-height: 1;
+      background: white;
+      border: 2px solid var(--marker-color, #4b5563);
+      border-radius: 50%;
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.28);
     }
 
     .emoji-marker.deleted {
-      opacity: 0.45;
-      filter: grayscale(1) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+      opacity: 0.5;
+      filter: grayscale(1);
     }
 
     .emoji-marker.candidate {
-      opacity: 0.6;
-      filter: grayscale(0.6) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
-      border: 2px dashed #999;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.6);
+      opacity: 0.75;
+      border-style: dashed;
+      background: rgba(255, 255, 255, 0.75);
+      box-shadow: none;
     }
 
     .empty-state {
@@ -69,11 +79,14 @@ export class MapComponent extends LitElement {
       left: 50%;
       transform: translateX(-50%);
       background: rgba(255, 255, 255, 0.95);
-      color: #555;
-      padding: 10px 16px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      backdrop-filter: blur(6px);
+      color: var(--color-text-muted, #51606f);
+      padding: 10px 18px;
+      border: 1px solid var(--color-border, #d7e0e8);
+      border-radius: var(--radius-lg, 20px);
+      box-shadow: var(--shadow-card, 0 12px 32px rgba(15, 23, 42, 0.08));
       font-size: 13px;
+      font-weight: 600;
       text-align: center;
       max-width: 80%;
       z-index: 450;
@@ -294,15 +307,15 @@ export class MapComponent extends LitElement {
     this.candidateLayer.clearLayers();
 
     for (const candidate of this.candidates) {
-      const { emoji } = getCategoryInfo(candidate.category);
+      const { emoji, color } = getCategoryInfo(candidate.category);
       const marker = L.marker([candidate.latitude, candidate.longitude], {
         title: candidate.name,
         icon: L.divIcon({
-          html: `<div class="emoji-marker candidate">${emoji}</div>`,
+          html: `<div class="emoji-marker candidate" style="--marker-color:${color}">${emoji}</div>`,
           className: '',
-          iconSize: [32, 32],
-          iconAnchor: [16, 16],
-          popupAnchor: [0, -16],
+          iconSize: [34, 34],
+          iconAnchor: [17, 17],
+          popupAnchor: [0, -17],
         }),
       });
 
@@ -328,24 +341,24 @@ export class MapComponent extends LitElement {
   }
 
   private createMarkerIcon(place: Place): L.DivIcon {
-    const { emoji } = getCategoryInfo(place.category);
+    const { emoji, color } = getCategoryInfo(place.category);
     return L.divIcon({
-      html: `<div class="emoji-marker${place.deletedAt ? ' deleted' : ''}">${emoji}</div>`,
+      html: `<div class="emoji-marker${place.deletedAt ? ' deleted' : ''}" style="--marker-color:${color}">${emoji}</div>`,
       className: '',
-      iconSize: [32, 32],
-      iconAnchor: [16, 16],
-      popupAnchor: [0, -16],
+      iconSize: [34, 34],
+      iconAnchor: [17, 17],
+      popupAnchor: [0, -17],
     });
   }
 
   private createPopupContent(place: Place): string {
-    const { label } = getCategoryInfo(place.category);
+    const { label, color } = getCategoryInfo(place.category);
     return `
-      <div style="min-width: 200px;">
-        <strong>${place.name}</strong>
-        <div style="font-size: 12px; color: #666;">${label}</div>
-        ${place.address ? `<div style="font-size: 12px;">${place.address}</div>` : ''}
-        ${place.deletedAt ? `<div style="font-size: 12px; color: #d32f2f; margin-top: 4px;">⚠️ No longer marked laptop-friendly on OSM</div>` : ''}
+      <div style="min-width: 200px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+        <strong style="font-size: 14px; color: #17212b;">${place.name}</strong>
+        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: ${color}; margin-top: 2px;">${label}</div>
+        ${place.address ? `<div style="font-size: 12px; color: #51606f; margin-top: 4px;">${place.address}</div>` : ''}
+        ${place.deletedAt ? `<div style="font-size: 12px; color: #b42318; margin-top: 6px; font-weight: 600;">⚠️ No longer marked laptop-friendly on OSM</div>` : ''}
       </div>
     `;
   }

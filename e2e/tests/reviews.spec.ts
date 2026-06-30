@@ -74,4 +74,50 @@ test.describe('Place detail - Mangrove reviews', () => {
     await reviewForm.locator('.star-btn').nth(3).click();
     await expect(submitButton).toBeEnabled();
   });
+
+  // Regression test: place-detail-modal's `.modal-backdrop` used `max-height`
+  // without `box-sizing: border-box`, so its padding/border were added on top
+  // of the cap instead of being included in it. On a desktop-width viewport
+  // short enough that content didn't fit, the panel (anchored to the bottom
+  // via `:host { bottom: 16px }`) grew taller than its max-height and its top
+  // — including the close button — was pushed off-screen above the viewport.
+  test('place detail panel stays fully within a short desktop viewport', async ({ page }) => {
+    // Reviews come from the live api.mangrove.reviews service keyed on these
+    // fixed test coordinates — the real review count for that subject grows
+    // over time (e.g. from this very suite's submit-review test running
+    // elsewhere), which would make the panel's content height, and thus this
+    // geometry assertion, non-deterministic. Stub it so content height only
+    // reflects this test's own (fixed) seed data.
+    await page.route('https://api.mangrove.reviews/**', (route) =>
+      route.fulfill({ json: { reviews: [] } })
+    );
+
+    await page.setViewportSize({ width: 1400, height: 650 });
+
+    const placesResponse = page.waitForResponse((res) => res.url().includes('/api/places'));
+    await page.goto('/');
+    await placesResponse;
+    await page.waitForTimeout(500);
+
+    await openFirstPlaceDetail(page);
+
+    // The panel slides up over 250ms (`@keyframes slideUp`, translateY 40px
+    // → 0); measuring immediately would catch it mid-animation, still
+    // offset downward from its resting position, and produce a false
+    // failure unrelated to actual layout.
+    await page.waitForTimeout(350);
+
+    const modal = page.locator('place-detail-modal .modal-backdrop');
+    const box = await modal.boundingBox();
+    const viewport = page.viewportSize();
+    expect(box).not.toBeNull();
+    expect(viewport).not.toBeNull();
+    expect(box!.y).toBeGreaterThanOrEqual(0);
+    expect(box!.y + box!.height).toBeLessThanOrEqual(viewport!.height);
+
+    const closeBtn = page.locator('place-detail-modal .close-btn');
+    await expect(closeBtn).toBeInViewport();
+    await closeBtn.click();
+    await expect(modal).toBeHidden();
+  });
 });

@@ -4,7 +4,9 @@ test.describe('List page', () => {
   test('searching by city shows results and opens place detail', async ({ page }) => {
     await page.goto('/');
 
-    await page.locator('menu-nav').locator('button').filter({ hasText: 'List' }).click();
+    const menuNav = page.locator('menu-nav');
+    await menuNav.locator('.menu-toggle').click();
+    await menuNav.locator('.menu-item').filter({ hasText: 'List' }).click();
 
     const listPage = page.locator('list-page');
     await expect(listPage).toBeVisible();
@@ -42,7 +44,9 @@ test.describe('List page', () => {
     const citiesResponse = page.waitForResponse((res) => res.url().includes('/api/cities'));
     await page.goto('/');
 
-    await page.locator('menu-nav').locator('button').filter({ hasText: 'List' }).click();
+    const menuNav = page.locator('menu-nav');
+    await menuNav.locator('.menu-toggle').click();
+    await menuNav.locator('.menu-item').filter({ hasText: 'List' }).click();
     await citiesResponse;
 
     const options = page.locator('list-page select option');

@@ -64,24 +64,41 @@ export class ContributePage extends LitElement {
     css`
       .tags-table {
         width: 100%;
-        border-collapse: collapse;
-        margin-top: 8px;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin-top: 12px;
         font-size: 14px;
+        border: 1px solid var(--color-border, #d7e0e8);
+        border-radius: var(--radius-lg, 20px);
+        overflow: hidden;
       }
 
-      .tags-table th,
+      .tags-table th {
+        text-align: left;
+        padding: 12px;
+        background: var(--color-bg-soft, #f7fafc);
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--color-text-faint, #667483);
+      }
+
       .tags-table td {
         text-align: left;
-        padding: 8px;
-        border-bottom: 1px solid #eee;
+        padding: 12px;
+        border-top: 1px solid var(--color-border-soft, #e3eaf1);
         vertical-align: top;
+        color: var(--color-text-muted, #51606f);
       }
 
       .tags-table code {
-        background: #f5f5f5;
+        background: var(--color-bg-chip, #eef3f7);
+        color: var(--color-text, #17212b);
         padding: 2px 6px;
-        border-radius: 4px;
+        border-radius: var(--radius-sm, 8px);
         font-size: 13px;
+        font-weight: 600;
       }
     `,
   ];
