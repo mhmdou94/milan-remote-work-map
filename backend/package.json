@@ -10,9 +10,9 @@
     "build": "tsc",
     "migrate": "tsx src/db/migrate.ts",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src migrations",
-    "format": "prettier --write src migrations",
-    "format:check": "prettier --check src migrations"
+    "lint": "eslint src",
+    "format": "prettier --write src",
+    "format:check": "prettier --check src"
   },
   "dependencies": {
     "@turf/centroid": "^7.3.5",

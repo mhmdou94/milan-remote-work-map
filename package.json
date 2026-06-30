@@ -18,8 +18,8 @@
     "test:e2e": "npm run test --workspace=e2e",
     "typecheck": "npm run typecheck --workspace=frontend && npm run typecheck --workspace=backend && npm run typecheck --workspace=e2e",
     "lint": "npm run lint --workspace=frontend && npm run lint --workspace=backend && npm run lint --workspace=e2e",
-    "format": "prettier --write \"frontend/src/**/*.{ts,css,html}\" \"backend/src/**/*.ts\" \"backend/migrations/**/*.ts\" \"e2e/tests/**/*.ts\" \"e2e/playwright.config.ts\"",
-    "format:check": "prettier --check \"frontend/src/**/*.{ts,css,html}\" \"backend/src/**/*.ts\" \"backend/migrations/**/*.ts\" \"e2e/tests/**/*.ts\" \"e2e/playwright.config.ts\""
+    "format": "prettier --write \"frontend/src/**/*.{ts,css,html}\" \"backend/src/**/*.ts\" \"e2e/tests/**/*.ts\" \"e2e/playwright.config.ts\"",
+    "format:check": "prettier --check \"frontend/src/**/*.{ts,css,html}\" \"backend/src/**/*.ts\" \"e2e/tests/**/*.ts\" \"e2e/playwright.config.ts\""
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
