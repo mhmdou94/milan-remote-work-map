@@ -9,6 +9,7 @@ on:
       - 'backend/**'
       - 'frontend/**'
       - 'Dockerfile'
+      - 'entrypoint.sh'
       - '.dockerignore'
       - 'package.json'
       - 'package-lock.json'
