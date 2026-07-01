@@ -65,7 +65,7 @@ ARG BUILD_DATE
 ARG BUILD_SHA
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    osmium-tool ca-certificates \
+    osmium-tool ca-certificates cron gosu \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ARG NODE_ENV=production
@@ -73,6 +73,7 @@ ENV NODE_ENV=${NODE_ENV}
 ENV TZ=UTC
 ENV PORT=3000
 ENV DB_PATH=/opt/app/data/places.sqlite
+ENV APP_MODE=server
 
 WORKDIR /opt/app
 
@@ -87,12 +88,13 @@ RUN echo "${BUILD_DATE:-$(date -u +'%Y-%m-%d %H:%M')}" > /opt/app/BUILD_DATE && 
     echo "${BUILD_SHA}" > /opt/app/BUILD_SHA && \
     chown node:node /opt/app/BUILD_DATE /opt/app/BUILD_SHA
 
-USER node
+COPY --chown=root:root entrypoint.sh /opt/app/entrypoint.sh
+RUN chmod +x /opt/app/entrypoint.sh
 
 VOLUME ["/opt/app/data"]
 
 EXPOSE 3000
 
-# Default to the API server. Override the command to run the worker instead, e.g.:
-#   docker run <image> node backend/dist/worker.js
-CMD ["node", "backend/dist/server.js"]
+# APP_MODE=server (default): starts the Express API as the node user.
+# APP_MODE=worker: installs a cron job (daily at 08:00 UTC) and runs the cron daemon.
+ENTRYPOINT ["/opt/app/entrypoint.sh"]

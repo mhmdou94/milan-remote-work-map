@@ -9,6 +9,7 @@ on:
       - 'backend/**'
       - 'frontend/**'
       - 'Dockerfile'
+      - 'entrypoint.sh'
       - '.dockerignore'
       - 'package.json'
       - 'package-lock.json'
@@ -53,3 +54,18 @@ jobs:
           build-args: |
             BUILD_DATE=${{ github.event.head_commit.timestamp }}
             BUILD_SHA=${{ github.sha }}
+      # Pi pulls the new image and recreates the container via a webhook
+      # behind the Cloudflare Tunnel (no inbound ports opened on the Pi).
+      # Requires repo secrets DEPLOY_WEBHOOK_URL and DEPLOY_WEBHOOK_TOKEN.
+      - name: Trigger Raspberry Pi deploy
+        env:
+          DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+          DEPLOY_WEBHOOK_TOKEN: ${{ secrets.DEPLOY_WEBHOOK_TOKEN }}
+        run: |
+          if [[ -z "$DEPLOY_WEBHOOK_URL" || -z "$DEPLOY_WEBHOOK_TOKEN" ]]; then
+            echo "::warning title=Deploy skipped::DEPLOY_WEBHOOK_URL or DEPLOY_WEBHOOK_TOKEN secret is not set — Pi was not notified"
+            exit 0
+          fi
+          curl --fail --silent --show-error -X POST "$DEPLOY_WEBHOOK_URL" \
+            -H "Authorization: Bearer $DEPLOY_WEBHOOK_TOKEN" \
+            --max-time 30

@@ -59,6 +59,12 @@ export class FilterPopover extends LitElement {
       border-color: var(--color-primary, #006cff);
     }
 
+    .filter-btn:focus-visible,
+    .clear-btn:focus-visible {
+      outline: 2px solid var(--color-primary, #006cff);
+      outline-offset: 2px;
+    }
+
     .filter-badge {
       position: absolute;
       top: -6px;
@@ -194,13 +200,21 @@ export class FilterPopover extends LitElement {
     const activeCount = Object.values(this.filters).filter(Boolean).length;
 
     return html`
-      <button class="filter-btn" @click=${this.toggleOpen} title="Toggle filters">
+      <button
+        class="filter-btn"
+        @click=${this.toggleOpen}
+        @keydown=${this.handleKeydown}
+        aria-label="Toggle map filters"
+        aria-expanded=${this.open}
+        aria-controls="filter-panel"
+        title="Toggle filters"
+      >
         🔽 ${activeCount > 0 ? html` <span class="filter-badge">${activeCount}</span> ` : ''}
       </button>
 
       ${this.open
         ? html`
-            <div class="filter-popover">
+            <div id="filter-panel" class="filter-popover" @keydown=${this.handleKeydown}>
               <div class="filter-header">
                 <span>Filters</span>
                 ${activeCount > 0
@@ -273,6 +287,12 @@ export class FilterPopover extends LitElement {
   private toggleOpen() {
     this.open = !this.open;
   }
+
+  private handleKeydown = (event: KeyboardEvent) => {
+    if (event.key === 'Escape') {
+      this.open = false;
+    }
+  };
 
   private updateFilter(key: keyof typeof this.filters, value: boolean) {
     this.filters = { ...this.filters, [key]: value };
