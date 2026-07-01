@@ -32,6 +32,7 @@ export class PlaceDetailModal extends LitElement {
   @state() declare nearbyTransit: TransitStop[];
   @state() declare nearbyTransitLoading: boolean;
   @state() declare nearbyExpanded: boolean;
+  @state() declare _showMoreAmenities: boolean;
 
   private reviewsAbortController: AbortController | null = null;
   private nearbyTransitAbortController: AbortController | null = null;
@@ -50,6 +51,7 @@ export class PlaceDetailModal extends LitElement {
     this.nearbyTransit = [];
     this.nearbyTransitLoading = true;
     this.nearbyExpanded = false;
+    this._showMoreAmenities = false;
   }
 
   static styles = css`
@@ -221,6 +223,22 @@ export class PlaceDetailModal extends LitElement {
       color: var(--tone-text, #51606f);
       font-size: 12px;
       font-weight: 700;
+    }
+
+    .show-more-btn {
+      display: block;
+      margin-top: 8px;
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-accent, #1a7cde);
+      cursor: pointer;
+    }
+
+    .show-more-btn:hover {
+      text-decoration: underline;
     }
 
     .amenity-nav {
@@ -640,6 +658,7 @@ export class PlaceDetailModal extends LitElement {
     if (changedProperties.has('place') && this.place) {
       this.loadReviews();
       this.loadNearbyTransit();
+      this._showMoreAmenities = false;
     }
   }
 
@@ -933,32 +952,43 @@ export class PlaceDetailModal extends LitElement {
   }
 
   private renderAmenities() {
-    const amenities: { icon: string; name: string; value: string; tone: Tone }[] = [];
+    type AmenityItem = { icon: string; name: string; value: string; tone: Tone };
 
-    if (this.place?.internetAccess) {
-      amenities.push({
+    const internetAccess = this.place?.internetAccess;
+    const pinned: AmenityItem[] = [
+      {
         icon: '📡',
         name: 'Internet',
         value:
-          this.place.internetAccess === 'yes'
+          internetAccess === 'yes'
             ? 'Yes'
-            : this.place.internetAccess === 'wlan'
+            : internetAccess === 'wlan'
               ? 'WiFi'
-              : 'Wired',
-        tone: 'good',
-      });
-    }
-
-    if (this.place?.sockets) {
-      amenities.push({
+              : internetAccess === 'wired'
+                ? 'Wired'
+                : internetAccess === 'no'
+                  ? 'No'
+                  : 'Unknown',
+        tone: internetAccess && internetAccess !== 'no' ? 'good' : 'unknown',
+      },
+      {
         icon: '🔌',
         name: 'Power sockets',
         value:
-          this.place.sockets === 'yes' ? 'Yes' : this.place.sockets === 'many' ? 'Many' : 'Some',
-        tone: this.place.sockets === 'many' || this.place.sockets === 'yes' ? 'good' : 'neutral',
-      });
-    }
+          this.place?.sockets === 'yes'
+            ? 'Yes'
+            : this.place?.sockets === 'many'
+              ? 'Many'
+              : this.place?.sockets === 'no'
+                ? 'No'
+                : 'Unknown',
+        tone: this.place?.sockets === 'yes' || this.place?.sockets === 'many' ? 'good' : 'unknown',
+      },
+    ];
 
+    const extra: AmenityItem[] = [];
+
+    // WiFi network shown only when the SSID is actually known (free-text detail)
     if (this.place?.wifiSsid) {
       const feeNote =
         this.place.wifiFee === 'yes'
@@ -967,7 +997,7 @@ export class PlaceDetailModal extends LitElement {
             ? ' (customers)'
             : '';
       const passwordNote = this.place.wifiPassword === 'yes' ? ', password required' : '';
-      amenities.push({
+      extra.push({
         icon: '📶',
         name: 'WiFi network',
         value: `${this.place.wifiSsid}${feeNote}${passwordNote}`,
@@ -975,137 +1005,181 @@ export class PlaceDetailModal extends LitElement {
       });
     }
 
-    if (this.place?.wheelchair) {
-      amenities.push({
-        icon: '♿',
-        name: 'Wheelchair access',
-        value:
-          this.place.wheelchair === 'yes'
-            ? 'Yes'
-            : this.place.wheelchair === 'limited'
-              ? 'Limited'
-              : 'No',
-        tone:
-          this.place.wheelchair === 'yes'
-            ? 'good'
-            : this.place.wheelchair === 'limited'
-              ? 'neutral'
-              : 'unknown',
-      });
-    }
+    // Yes/no amenities always shown; fall back to Unknown when unmapped
+    extra.push({
+      icon: '❄️',
+      name: 'Air conditioning',
+      value:
+        this.place?.airConditioning === 'yes'
+          ? 'Yes'
+          : this.place?.airConditioning === 'no'
+            ? 'No'
+            : 'Unknown',
+      tone: this.place?.airConditioning === 'yes' ? 'good' : 'unknown',
+    });
 
-    if (this.place?.airConditioning) {
-      amenities.push({
-        icon: '❄️',
-        name: 'Air conditioning',
-        value: this.place.airConditioning === 'yes' ? 'Yes' : 'No',
-        tone: this.place.airConditioning === 'yes' ? 'good' : 'unknown',
-      });
-    }
+    extra.push({
+      icon: '🏠',
+      name: 'Indoor seating',
+      value:
+        this.place?.indoorSeating === 'yes'
+          ? 'Yes'
+          : this.place?.indoorSeating === 'no'
+            ? 'No'
+            : 'Unknown',
+      tone: this.place?.indoorSeating === 'yes' ? 'good' : 'unknown',
+    });
 
-    if (this.place?.indoorSeating) {
-      amenities.push({
-        icon: '🏠',
-        name: 'Indoor seating',
-        value: this.place.indoorSeating === 'yes' ? 'Yes' : 'No',
-        tone: this.place.indoorSeating === 'yes' ? 'good' : 'unknown',
-      });
-    }
+    extra.push({
+      icon: '☂️',
+      name: 'Outdoor seating',
+      value:
+        this.place?.outdoorSeating === 'yes'
+          ? 'Yes'
+          : this.place?.outdoorSeating === 'no'
+            ? 'No'
+            : 'Unknown',
+      tone: this.place?.outdoorSeating === 'yes' ? 'good' : 'unknown',
+    });
 
-    if (this.place?.outdoorSeating) {
-      amenities.push({
-        icon: '☂️',
-        name: 'Outdoor seating',
-        value: this.place.outdoorSeating === 'yes' ? 'Yes' : 'No',
-        tone: this.place.outdoorSeating === 'yes' ? 'good' : 'unknown',
-      });
-    }
-
-    if (this.place?.smoking) {
+    {
       const smokingLabels: Record<string, string> = {
         yes: 'Yes',
         no: 'No',
         outside: 'Outside only',
         separated: 'Separated area',
       };
-      amenities.push({
+      extra.push({
         icon: '🚬',
         name: 'Smoking',
-        value: smokingLabels[this.place.smoking],
-        tone: this.place.smoking === 'no' ? 'good' : 'neutral',
+        value: this.place?.smoking ? smokingLabels[this.place.smoking] : 'Unknown',
+        tone: this.place?.smoking === 'no' ? 'good' : this.place?.smoking ? 'neutral' : 'unknown',
       });
     }
 
-    if (this.place?.drinkingWater) {
-      amenities.push({
-        icon: '🚰',
-        name: 'Drinking water',
-        value: this.place.drinkingWater === 'yes' ? 'Yes' : 'No',
-        tone: this.place.drinkingWater === 'yes' ? 'good' : 'unknown',
-      });
-    }
+    extra.push({
+      icon: '🚰',
+      name: 'Drinking water',
+      value:
+        this.place?.drinkingWater === 'yes'
+          ? 'Yes'
+          : this.place?.drinkingWater === 'no'
+            ? 'No'
+            : 'Unknown',
+      tone: this.place?.drinkingWater === 'yes' ? 'good' : 'unknown',
+    });
 
-    if (this.place?.toilets) {
-      const wheelchairNote =
-        this.place.toiletsWheelchair === 'yes' ? ' (wheelchair accessible)' : '';
-      amenities.push({
-        icon: '🚻',
-        name: 'Toilets',
-        value: `${this.place.toilets === 'yes' ? 'Yes' : 'No'}${wheelchairNote}`,
-        tone: this.place.toilets === 'yes' ? 'good' : 'unknown',
-      });
-    }
+    extra.push({
+      icon: '🚻',
+      name: 'Toilets',
+      value:
+        this.place?.toilets === 'yes' ? 'Yes' : this.place?.toilets === 'no' ? 'No' : 'Unknown',
+      tone: this.place?.toilets === 'yes' ? 'good' : 'unknown',
+    });
 
-    if (this.place?.dog) {
-      amenities.push({
-        icon: '🐕',
-        name: 'Dogs allowed',
-        value: this.place.dog === 'yes' ? 'Yes' : this.place.dog === 'leashed' ? 'On leash' : 'No',
-        tone: this.place.dog === 'no' ? 'unknown' : 'neutral',
-      });
-    }
+    extra.push({
+      icon: '🐕',
+      name: 'Dogs allowed',
+      value:
+        this.place?.dog === 'yes'
+          ? 'Yes'
+          : this.place?.dog === 'leashed'
+            ? 'On leash'
+            : this.place?.dog === 'no'
+              ? 'No'
+              : 'Unknown',
+      tone: !this.place?.dog || this.place.dog === 'no' ? 'unknown' : 'neutral',
+    });
 
-    if (this.place?.fee) {
-      amenities.push({
-        icon: '💶',
-        name: 'Fee',
-        value: this.place.charge || (this.place.fee === 'yes' ? 'Yes' : 'No'),
-        tone: this.place.fee === 'yes' ? 'neutral' : 'good',
-      });
-    }
+    extra.push({
+      icon: '💶',
+      name: 'Fee',
+      value: this.place?.fee
+        ? this.place.charge || (this.place.fee === 'yes' ? 'Yes' : 'No')
+        : 'Unknown',
+      tone: this.place?.fee === 'yes' ? 'neutral' : this.place?.fee === 'no' ? 'good' : 'unknown',
+    });
 
-    if (this.place?.reservation) {
-      amenities.push({
-        icon: '📅',
-        name: 'Reservation',
-        value:
-          this.place.reservation === 'yes'
-            ? 'Required'
-            : this.place.reservation === 'recommended'
-              ? 'Recommended'
-              : 'Not needed',
-        tone: 'neutral',
-      });
-    }
+    extra.push({
+      icon: '📅',
+      name: 'Reservation',
+      value:
+        this.place?.reservation === 'yes'
+          ? 'Required'
+          : this.place?.reservation === 'recommended'
+            ? 'Recommended'
+            : this.place?.reservation === 'no'
+              ? 'Not needed'
+              : 'Unknown',
+      tone: this.place?.reservation ? 'neutral' : 'unknown',
+    });
 
+    // Free-text/numeric fields shown only when set
     if (this.place?.capacity) {
-      amenities.push({ icon: '👥', name: 'Capacity', value: this.place.capacity, tone: 'neutral' });
+      extra.push({ icon: '👥', name: 'Capacity', value: this.place.capacity, tone: 'neutral' });
     }
 
     if (this.place?.level) {
-      amenities.push({ icon: '🏢', name: 'Floor', value: this.place.level, tone: 'neutral' });
+      extra.push({ icon: '🏢', name: 'Floor', value: this.place.level, tone: 'neutral' });
     }
 
     if (this.place?.brand) {
-      amenities.push({ icon: '🏷️', name: 'Brand', value: this.place.brand, tone: 'neutral' });
+      extra.push({ icon: '🏷️', name: 'Brand', value: this.place.brand, tone: 'neutral' });
     }
 
-    if (amenities.length === 0) return html``;
+    const accessibility: AmenityItem[] = [
+      {
+        icon: '♿',
+        name: 'Wheelchair access',
+        value:
+          this.place?.wheelchair === 'yes'
+            ? 'Yes'
+            : this.place?.wheelchair === 'limited'
+              ? 'Limited'
+              : this.place?.wheelchair === 'no'
+                ? 'No'
+                : 'Unknown',
+        tone:
+          this.place?.wheelchair === 'yes'
+            ? 'good'
+            : this.place?.wheelchair === 'limited'
+              ? 'neutral'
+              : 'unknown',
+      },
+      {
+        icon: '🚻♿',
+        name: 'Wheelchair toilets',
+        value:
+          this.place?.toiletsWheelchair === 'yes'
+            ? 'Yes'
+            : this.place?.toiletsWheelchair === 'no'
+              ? 'No'
+              : 'Unknown',
+        tone: this.place?.toiletsWheelchair === 'yes' ? 'good' : 'unknown',
+      },
+    ];
 
     return html`
       <div class="modal-section">
         <div class="modal-section-title">Amenities</div>
-        <div class="amenities">${amenities.map((a) => this.renderAmenity(a))}</div>
+        <div class="amenities">
+          ${pinned.map((a) => this.renderAmenity(a))}
+          ${this._showMoreAmenities ? extra.map((a) => this.renderAmenity(a)) : ''}
+        </div>
+        ${extra.length > 0
+          ? html`<button
+              class="show-more-btn"
+              @click=${() => {
+                this._showMoreAmenities = !this._showMoreAmenities;
+              }}
+            >
+              ${this._showMoreAmenities ? 'Show less' : `Show more (${extra.length})`}
+            </button>`
+          : ''}
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">Accessibility</div>
+        <div class="amenities">${accessibility.map((a) => this.renderAmenity(a))}</div>
       </div>
     `;
   }
