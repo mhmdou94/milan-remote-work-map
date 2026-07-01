@@ -41,7 +41,13 @@ async function start() {
   // Serve the built frontend (absent in dev, where Vite's own dev server
   // proxies /api instead) and fall back to index.html for client-side routes.
   if (fs.existsSync(frontendDist)) {
-    app.use(express.static(frontendDist));
+    // Vite output under /assets/ has content-hashed filenames — safe to cache forever.
+    app.use(
+      '/assets',
+      express.static(path.join(frontendDist, 'assets'), { maxAge: '1y', immutable: true })
+    );
+    // index.html and other non-hashed files must not be cached so deploys take effect immediately.
+    app.use(express.static(frontendDist, { maxAge: 0 }));
     app.use((req, res, next) => {
       if (req.path.startsWith('/api/')) return next();
       res.sendFile(path.join(frontendDist, 'index.html'));

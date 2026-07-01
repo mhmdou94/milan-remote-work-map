@@ -13,13 +13,13 @@ export function createPlaceByIdRoute(db: Knex) {
 
       const place = await getPlaceById(db, id);
       if (place) {
-        res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.set('Cache-Control', 'public, max-age=86400, stale-while-revalidate=3600');
         return res.json({ ...place, unverified: false });
       }
 
       const candidate = await getPlaceCandidateById(db, id);
       if (candidate) {
-        res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.set('Cache-Control', 'public, max-age=86400, stale-while-revalidate=3600');
         return res.json(candidateToPlace(candidate));
       }
 

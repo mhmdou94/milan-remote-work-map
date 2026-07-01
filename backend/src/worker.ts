@@ -24,6 +24,48 @@ import {
 } from './db/queries.js';
 import type { Place, StagedPlace } from './types.js';
 
+async function purgeCloudflareCache(): Promise<void> {
+  const zoneId = process.env.CLOUDFLARE_ZONE_ID;
+  const apiToken = process.env.CLOUDFLARE_API_TOKEN;
+  if (!zoneId || !apiToken) {
+    console.warn(
+      '   ⚠️  Cloudflare cache purge skipped: CLOUDFLARE_ZONE_ID and CLOUDFLARE_API_TOKEN not set'
+    );
+    return;
+  }
+
+  console.log('\n🌩️  Purging Cloudflare cache...');
+  try {
+    const response = await fetch(
+      `https://api.cloudflare.com/client/v4/zones/${zoneId}/purge_cache`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiToken}`,
+          'Content-Type': 'application/json',
+        },
+        // Cache-Tag purging requires Pro plan; purge_everything is safe since
+        // static assets are content-hashed and re-cache immediately on next request.
+        body: JSON.stringify({ purge_everything: true }),
+      }
+    );
+    const data = (await response.json()) as {
+      success: boolean;
+      errors?: Array<{ message: string }>;
+    };
+    if (data.success) {
+      console.log('   ✅ Cloudflare cache purged');
+    } else {
+      console.warn(
+        '   ⚠️  Cloudflare cache purge failed:',
+        data.errors?.map((e) => e.message).join(', ')
+      );
+    }
+  } catch (err) {
+    console.warn('   ⚠️  Cloudflare cache purge error:', err);
+  }
+}
+
 function toStagedPlace(place: Place): StagedPlace {
   return {
     osmId: place.osmId!,
@@ -247,6 +289,7 @@ async function syncPlaces(): Promise<void> {
       candidatesPruned: prunedCandidateCount,
     });
 
+    await purgeCloudflareCache();
     await closeDb(db);
 
     console.log(`\n✅ Sync complete!`);

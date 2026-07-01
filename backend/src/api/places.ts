@@ -36,7 +36,11 @@ export function createPlacesRoute(db: Knex) {
         features: places.map(placeToGeoJSON),
       };
 
-      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      // open_now is time-dependent so it can't be cached
+      const cacheHeader = filters.openNow
+        ? 'no-store'
+        : 'public, max-age=86400, stale-while-revalidate=3600';
+      res.set('Cache-Control', cacheHeader);
       res.json(geojson);
     } catch (error) {
       console.error('Error fetching places:', error);
@@ -49,7 +53,7 @@ export function createCitiesRoute(db: Knex) {
   return async (_req: Request, res: Response) => {
     try {
       const cities = await getDistinctCities(db);
-      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Cache-Control', 'public, max-age=86400, stale-while-revalidate=3600');
       res.json({ cities });
     } catch (error) {
       console.error('Error fetching cities:', error);

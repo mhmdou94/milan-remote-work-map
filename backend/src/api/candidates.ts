@@ -21,7 +21,7 @@ export function createCandidatesRoute(db: Knex) {
         features: candidates.map(candidateToGeoJSON),
       };
 
-      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Cache-Control', 'public, max-age=86400, stale-while-revalidate=3600');
       res.json(geojson);
     } catch (error) {
       console.error('Error fetching place candidates:', error);

@@ -19,7 +19,7 @@ export function createNearbyTransitRoute(db: Knex) {
 
       const stops = await getNearbyTransitStops(db, lat, lon, radius);
 
-      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Cache-Control', 'public, max-age=172800, stale-while-revalidate=86400');
       res.json({ stops });
     } catch (error) {
       console.error('Error fetching nearby transit:', error);
