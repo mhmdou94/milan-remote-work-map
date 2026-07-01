@@ -19,6 +19,16 @@ import {
 } from './lib/router.js';
 import { candidateToPlace } from './lib/place.js';
 import { debounce } from './lib/debounce.js';
+import { getCategoryInfo } from './categories.js';
+import { getWorkFit } from './lib/work-fit.js';
+
+interface MapFilters {
+  internetAccess: boolean;
+  sockets: boolean;
+  openNow: boolean;
+  showRemoved: boolean;
+  showCandidates: boolean;
+}
 
 export class RemoteWorkApp extends LitElement {
   static styles = css`
@@ -548,6 +558,7 @@ export class RemoteWorkApp extends LitElement {
 
   async applyFilters(filters: typeof this.filters) {
     this.filters = filters;
+    this.emitFilterState();
     const bbox = this.mapComponent?.getCurrentBbox();
     if (!bbox) return;
     await this.fetchPlaces(bbox);
