@@ -28,7 +28,9 @@ test.describe('List page', () => {
     await expect(results).toHaveCount(6);
     await expect(listPage).toContainText('Caffè Nero');
 
-    const wiredInternetItem = listPage.locator('.result-item', { hasText: 'Biblioteca Ambrosiana' });
+    const wiredInternetItem = listPage.locator('.result-item', {
+      hasText: 'Biblioteca Ambrosiana',
+    });
     await expect(wiredInternetItem.locator('[title="Internet access"]')).toBeVisible();
 
     await results.first().click();
