@@ -1,7 +1,7 @@
 import { Knex } from 'knex';
 import { initDb, closeDb } from './db/init.js';
-import { insertPlace } from './db/queries.js';
-import type { Place } from './types.js';
+import { insertPlace, upsertPlaceCandidate } from './db/queries.js';
+import type { Place, PlaceCandidate } from './types.js';
 
 export const SEED_PLACES: Place[] = [
   {
@@ -141,9 +141,28 @@ export const SEED_PLACES: Place[] = [
   },
 ];
 
+export const SEED_CANDIDATES: PlaceCandidate[] = [
+  {
+    id: 'candidate-1',
+    osmId: 'node/999001',
+    name: 'Candidate Café Milano',
+    category: 'cafe',
+    latitude: 45.466,
+    longitude: 9.188,
+    address: 'Via Brera, 1 Milano',
+    city: 'Milano',
+    internetAccess: 'yes',
+    osmTags: { name: 'Candidate Café Milano', amenity: 'cafe' },
+    lastSynced: new Date().toISOString(),
+  },
+];
+
 export async function seedDb(db: Knex): Promise<void> {
   for (const place of SEED_PLACES) {
     await insertPlace(db, place);
+  }
+  for (const candidate of SEED_CANDIDATES) {
+    await upsertPlaceCandidate(db, candidate, new Date().toISOString());
   }
 }
 
@@ -159,9 +178,18 @@ async function main(): Promise<void> {
       console.log(`  ✓ ${place.name}`);
     }
 
+    console.log(`📝 Inserting ${SEED_CANDIDATES.length} test candidates...`);
+    const syncedAt = new Date().toISOString();
+    for (const candidate of SEED_CANDIDATES) {
+      await upsertPlaceCandidate(db, candidate, syncedAt);
+      console.log(`  ✓ ${candidate.name}`);
+    }
+
     await closeDb(db);
 
-    console.log(`\n✅ Seed complete! ${SEED_PLACES.length} test places in database`);
+    console.log(
+      `\n✅ Seed complete! ${SEED_PLACES.length} test places, ${SEED_CANDIDATES.length} candidates in database`,
+    );
     console.log(`📍 Test API: http://localhost:3000/api/places?bbox=45.3,9.0,45.6,9.4\n`);
   } catch (error) {
     console.error('\n❌ Seed failed:', error);

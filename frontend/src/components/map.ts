@@ -375,7 +375,10 @@ export class MapComponent extends LitElement {
       this.candidateLayer = L.layerGroup();
       this.map.addLayer(this.candidateLayer);
 
-      this.map.on('moveend', () => this.updateEmptyState());
+      this.map.on('moveend', () => {
+        this.updateEmptyState();
+        this.dispatchEvent(new CustomEvent('map-moved', { detail: this.getCurrentBbox() }));
+      });
 
       // Watch for container resize
       this.resizeObserver = new ResizeObserver(() => {
@@ -392,9 +395,21 @@ export class MapComponent extends LitElement {
       this.renderMarkers();
       this.renderCandidateMarkers();
       this.updateEmptyState();
+      this.dispatchEvent(new CustomEvent('map-ready', { detail: this.getCurrentBbox() }));
     } catch (error) {
       console.error('Error initializing map:', error);
     }
+  }
+
+  getCurrentBbox(): { minLat: number; minLon: number; maxLat: number; maxLon: number } | null {
+    if (!this.map) return null;
+    const b = this.map.getBounds();
+    return {
+      minLat: b.getSouth(),
+      minLon: b.getWest(),
+      maxLat: b.getNorth(),
+      maxLon: b.getEast(),
+    };
   }
 
   private updateEmptyState() {
