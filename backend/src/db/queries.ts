@@ -202,7 +202,7 @@ export async function getPlaces(
   }
 
   if (filters?.internetAccess) {
-    query.andWhere('internet_access', 'yes');
+    query.andWhere('internet_access', 'in', ['yes', 'wired']);
   }
 
   if (filters?.sockets) {

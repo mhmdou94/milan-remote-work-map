@@ -55,5 +55,9 @@ test.describe('Map page', () => {
     await internetCheckbox.check();
     const response = await filteredResponse;
     expect(response.ok()).toBe(true);
+
+    const geojson = await response.json();
+    const names = geojson.features.map((f: { properties: { name: string } }) => f.properties.name);
+    expect(names).toContain('Biblioteca Ambrosiana');
   });
 });
