@@ -30,6 +30,7 @@ export class MapComponent extends LitElement {
 
     :host {
       display: block;
+      position: relative;
       width: 100%;
       height: 100%;
     }
@@ -45,6 +46,10 @@ export class MapComponent extends LitElement {
        a plain selector reaches them. */
     .leaflet-top.leaflet-left {
       top: 64px;
+    }
+
+    .leaflet-left .leaflet-control {
+      margin-left: 16px;
     }
 
     .emoji-marker {
@@ -82,6 +87,7 @@ export class MapComponent extends LitElement {
       border-color: #b26a00;
     }
 
+    .map-message,
     .empty-state {
       position: absolute;
       top: 72px;
@@ -101,18 +107,75 @@ export class MapComponent extends LitElement {
       z-index: 450;
       pointer-events: none;
     }
+
+    .map-message {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      pointer-events: auto;
+    }
+
+    .map-message.error {
+      color: var(--color-danger, #b42318);
+    }
+
+    .retry-btn,
+    .locate-btn {
+      border: 1px solid var(--color-border, #d7e0e8);
+      background: white;
+      color: var(--color-text, #17212b);
+      border-radius: var(--radius-md, 14px);
+      cursor: pointer;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .retry-btn {
+      padding: 7px 10px;
+      color: var(--color-primary, #006cff);
+      border-color: var(--color-primary, #006cff);
+    }
+
+    .locate-btn {
+      position: absolute;
+      left: 16px;
+      bottom: 24px;
+      z-index: 450;
+      padding: 10px 14px;
+      box-shadow: var(--shadow-card, 0 12px 32px rgba(15, 23, 42, 0.08));
+      backdrop-filter: blur(6px);
+      background: rgba(255, 255, 255, 0.95);
+    }
+
+    .retry-btn:hover,
+    .locate-btn:hover {
+      border-color: var(--color-primary, #006cff);
+    }
+
+    .retry-btn:focus-visible,
+    .locate-btn:focus-visible {
+      outline: 2px solid var(--color-primary, #006cff);
+      outline-offset: 2px;
+    }
   `;
 
   static properties = {
     places: { type: Array },
     candidates: { type: Array },
     selectedPlace: { type: Object },
+    loading: { type: Boolean },
+    loaded: { type: Boolean },
+    error: { type: String },
     showEmptyState: { type: Boolean, state: true },
   };
 
   declare places: Place[];
   declare candidates: PlaceCandidate[];
   declare selectedPlace: Place | null;
+  declare loading: boolean;
+  declare loaded: boolean;
+  declare error: string | null;
   declare showEmptyState: boolean;
   map: L.Map | null;
   userLocation: { lat: number; lon: number } | null;
@@ -126,6 +189,9 @@ export class MapComponent extends LitElement {
     this.places = [];
     this.candidates = [];
     this.selectedPlace = null;
+    this.loading = false;
+    this.loaded = false;
+    this.error = null;
     this.showEmptyState = false;
     this.map = null;
     this.userLocation = null;
@@ -138,7 +204,21 @@ export class MapComponent extends LitElement {
     return html`
       ${LEAFLET_CSS}
       <div id="map-container"></div>
-      ${this.showEmptyState
+      <button class="locate-btn" @click=${this.requestGeolocation} type="button">
+        ⌖ Locate me
+      </button>
+      ${this.loading && !this.loaded
+        ? html`<div class="map-message">Loading laptop-friendly places…</div>`
+        : ''}
+      ${this.error
+        ? html`
+            <div class="map-message error">
+              <span>${this.error}</span>
+              <button class="retry-btn" type="button" @click=${this.retryPlaces}>Retry</button>
+            </div>
+          `
+        : ''}
+      ${this.showEmptyState && !this.loading && !this.error
         ? html`
             <div class="empty-state">
               📍 No laptop-friendly places in view — try panning back toward Milan or zooming out.
@@ -163,13 +243,11 @@ export class MapComponent extends LitElement {
       if (rect.width > 100 && rect.height > 100 && attempts > 2) {
         console.log('✓ Layout settled, initializing map');
         this.initMap();
-        this.requestGeolocation();
       } else if (attempts < 10) {
         requestAnimationFrame(waitForLayout);
       } else {
         console.warn('⚠️ Layout timeout, initializing anyway');
         this.initMap();
-        this.requestGeolocation();
       }
     };
 
@@ -263,6 +341,10 @@ export class MapComponent extends LitElement {
 
   private updateEmptyState() {
     if (!this.map) return;
+    if (!this.loaded || this.loading || this.error) {
+      this.showEmptyState = false;
+      return;
+    }
 
     const bounds = this.map.getBounds();
     const hasPlaceInView = this.places.some((p) => bounds.contains([p.latitude, p.longitude]));
@@ -380,7 +462,7 @@ export class MapComponent extends LitElement {
     `;
   }
 
-  private requestGeolocation() {
+  private requestGeolocation = () => {
     if (!navigator.geolocation) return;
 
     navigator.geolocation.getCurrentPosition(
@@ -408,7 +490,11 @@ export class MapComponent extends LitElement {
         console.log('Geolocation not available, using default center');
       }
     );
-  }
+  };
+
+  private retryPlaces = () => {
+    this.dispatchEvent(new CustomEvent('retry-places'));
+  };
 }
 
 customElements.define('remote-work-map', MapComponent);

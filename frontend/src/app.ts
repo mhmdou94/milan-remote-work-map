@@ -24,6 +24,7 @@ export class RemoteWorkApp extends LitElement {
       display: block;
       width: 100%;
       height: 100vh;
+      height: 100dvh;
     }
 
     .app-container {
@@ -53,6 +54,9 @@ export class RemoteWorkApp extends LitElement {
     selectedPlace: { type: Object },
     currentPage: { type: String },
     filters: { type: Object },
+    placesLoading: { type: Boolean },
+    placesLoaded: { type: Boolean },
+    placesError: { type: String },
   };
 
   declare center: { lat: number; lon: number };
@@ -60,6 +64,9 @@ export class RemoteWorkApp extends LitElement {
   declare candidates: PlaceCandidate[];
   declare selectedPlace: Place | null;
   declare currentPage: Page;
+  declare placesLoading: boolean;
+  declare placesLoaded: boolean;
+  declare placesError: string | null;
   declare filters: {
     internetAccess: boolean;
     sockets: boolean;
@@ -77,6 +84,9 @@ export class RemoteWorkApp extends LitElement {
     this.candidates = [];
     this.selectedPlace = null;
     this.currentPage = 'map';
+    this.placesLoading = false;
+    this.placesLoaded = false;
+    this.placesError = null;
     this.filters = {
       internetAccess: false,
       sockets: false,
@@ -99,7 +109,11 @@ export class RemoteWorkApp extends LitElement {
           .places=${this.places}
           .candidates=${this.candidates}
           .selectedPlace=${this.selectedPlace}
+          .loading=${this.placesLoading}
+          .loaded=${this.placesLoaded}
+          .error=${this.placesError}
           @place-selected=${this.handlePlaceSelect}
+          @retry-places=${this.retryPlaces}
           id="map"
           class=${this.currentPage !== 'map' ? 'hidden-page' : ''}
         ></remote-work-map>
@@ -114,6 +128,7 @@ export class RemoteWorkApp extends LitElement {
               <place-detail-modal
                 .place=${this.selectedPlace}
                 @close=${this.handleDetailClose}
+                @view-on-map=${this.handleViewOnMap}
               ></place-detail-modal>
             `
           : ''}
@@ -129,6 +144,7 @@ export class RemoteWorkApp extends LitElement {
     super.connectedCallback();
     window.addEventListener('popstate', this.handlePopState);
     this.syncPageFromUrl();
+    this.emitUiState();
     await this.fetchPlaces();
     await this.syncSelectedPlaceFromUrl();
   }
@@ -150,6 +166,9 @@ export class RemoteWorkApp extends LitElement {
   }
 
   async fetchPlaces(bbox?: BBox) {
+    this.placesLoading = true;
+    this.placesError = null;
+
     try {
       const params = new URLSearchParams();
 
@@ -174,6 +193,9 @@ export class RemoteWorkApp extends LitElement {
       }
 
       const res = await fetch(`/api/places?${params}`);
+      if (!res.ok) {
+        throw new Error(`Places request failed with ${res.status}`);
+      }
       const data = await res.json();
 
       this.places = data.features.map((f: any) => ({
@@ -181,8 +203,12 @@ export class RemoteWorkApp extends LitElement {
         latitude: f.geometry.coordinates[1],
         longitude: f.geometry.coordinates[0],
       }));
+      this.placesLoaded = true;
     } catch (error) {
       console.error('Error fetching places:', error);
+      this.placesError = 'Could not load places. Check your connection and try again.';
+    } finally {
+      this.placesLoading = false;
     }
   }
 
@@ -252,6 +278,7 @@ export class RemoteWorkApp extends LitElement {
 
   private handlePopState = () => {
     this.syncPageFromUrl();
+    this.emitUiState();
     this.syncSelectedPlaceFromUrl();
   };
 
@@ -262,6 +289,7 @@ export class RemoteWorkApp extends LitElement {
     history.pushState({ viaApp: true }, '', pageUrl(page));
     this.currentPage = page;
     this.selectedPlace = null;
+    this.emitUiState();
   }
 
   private handlePlaceSelect = (event: CustomEvent<Place>) => {
@@ -269,6 +297,17 @@ export class RemoteWorkApp extends LitElement {
     const place = event.detail;
     history.pushState({ viaApp: true }, '', placeUrl(place.id));
     this.selectedPlace = place;
+  };
+
+  private retryPlaces = () => {
+    this.fetchPlaces();
+  };
+
+  private handleViewOnMap = () => {
+    if (!this.selectedPlace) return;
+    history.replaceState(null, '', placeUrl(this.selectedPlace.id));
+    this.currentPage = 'map';
+    this.emitUiState();
   };
 
   private handleDetailClose = () => {
@@ -283,6 +322,14 @@ export class RemoteWorkApp extends LitElement {
       this.selectedPlace = null;
     }
   };
+
+  private emitUiState() {
+    this.dispatchEvent(
+      new CustomEvent('ui-state-change', {
+        detail: { currentPage: this.currentPage },
+      })
+    );
+  }
 }
 
 customElements.define('remote-work-app', RemoteWorkApp);

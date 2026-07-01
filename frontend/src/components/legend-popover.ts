@@ -45,6 +45,11 @@ export class LegendPopover extends LitElement {
       border-color: var(--color-primary, #006cff);
     }
 
+    .legend-btn:focus-visible {
+      outline: 2px solid var(--color-primary, #006cff);
+      outline-offset: 2px;
+    }
+
     .legend-popover {
       position: absolute;
       top: 52px;
@@ -100,11 +105,21 @@ export class LegendPopover extends LitElement {
 
   render() {
     return html`
-      <button class="legend-btn" @click=${this.toggleOpen} title="Toggle legend">🗺️</button>
+      <button
+        class="legend-btn"
+        @click=${this.toggleOpen}
+        @keydown=${this.handleKeydown}
+        aria-label="Toggle map legend"
+        aria-expanded=${this.open}
+        aria-controls="legend-panel"
+        title="Toggle legend"
+      >
+        🗺️
+      </button>
 
       ${this.open
         ? html`
-            <div class="legend-popover">
+            <div id="legend-panel" class="legend-popover" @keydown=${this.handleKeydown}>
               <div class="legend-title">Legend</div>
               <div class="legend-items">
                 ${getLegendCategories().map(
@@ -125,6 +140,20 @@ export class LegendPopover extends LitElement {
                   <span class="legend-emoji" style="opacity: 0.45; filter: grayscale(1);">📍</span>
                   <span class="legend-label">Recently removed from OSM</span>
                 </div>
+                <div class="legend-item">
+                  <span class="legend-emoji" style="border: 1px dashed #667483;">💡</span>
+                  <span class="legend-label">Suggested, unverified place</span>
+                </div>
+                <div class="legend-item">
+                  <span class="legend-emoji" style="border: 1px solid #b26a00;">⚠️</span>
+                  <span class="legend-label">Laptop use restricted</span>
+                </div>
+                <div class="legend-item">
+                  <span class="legend-emoji" style="border: 1px solid var(--color-danger, #b42318);"
+                    >🚫</span
+                  >
+                  <span class="legend-label">Not laptop-friendly</span>
+                </div>
               </div>
             </div>
           `
@@ -135,6 +164,12 @@ export class LegendPopover extends LitElement {
   private toggleOpen() {
     this.open = !this.open;
   }
+
+  private handleKeydown = (event: KeyboardEvent) => {
+    if (event.key === 'Escape') {
+      this.open = false;
+    }
+  };
 }
 
 customElements.define('legend-popover', LegendPopover);
