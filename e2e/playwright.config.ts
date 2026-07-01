@@ -37,7 +37,7 @@ export default defineConfig({
       command: `rm -f "${DB_PATH}" && npm run seed --workspace=backend && npm run dev --workspace=backend`,
       cwd: path.join(__dirname, '..'),
       env: { DB_PATH, PORT: String(BACKEND_PORT) },
-      url: `http://localhost:${BACKEND_PORT}/health`,
+      url: `http://localhost:${BACKEND_PORT}/api/health`,
       reuseExistingServer: false,
       timeout: 60_000,
     },

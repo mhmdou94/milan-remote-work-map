@@ -6,6 +6,8 @@ import {
   TransitStop,
   TransitStopWithDistance,
   PlaceCandidate,
+  WorkerRun,
+  WorkerRunRegion,
 } from '../types.js';
 
 interface PlaceRow {
@@ -585,6 +587,154 @@ export async function prunePlaceCandidates(db: Knex, validIds: Set<string>): Pro
   });
 
   return staleIds.length;
+}
+
+interface WorkerRunRow {
+  id: number;
+  started_at: string;
+  completed_at: string | null;
+  status: string;
+  error: string | null;
+  places_fetched: number | null;
+  inserted: number | null;
+  updated: number | null;
+  restored: number | null;
+  deleted: number | null;
+  transit_pruned: number | null;
+  candidates_pruned: number | null;
+}
+
+interface WorkerRunRegionRow {
+  id: number;
+  run_id: number;
+  region_name: string;
+  started_at: string;
+  completed_at: string | null;
+  places_fetched: number | null;
+  transit_stops: number | null;
+  candidates: number | null;
+}
+
+function rowToWorkerRunRegion(row: WorkerRunRegionRow): WorkerRunRegion {
+  return {
+    id: row.id,
+    runId: row.run_id,
+    regionName: row.region_name,
+    startedAt: row.started_at,
+    completedAt: row.completed_at,
+    placesFetched: row.places_fetched,
+    transitStops: row.transit_stops,
+    candidates: row.candidates,
+  };
+}
+
+function rowToWorkerRun(row: WorkerRunRow, regions: WorkerRunRegion[]): WorkerRun {
+  return {
+    id: row.id,
+    startedAt: row.started_at,
+    completedAt: row.completed_at,
+    status: row.status as WorkerRun['status'],
+    error: row.error,
+    placesFetched: row.places_fetched,
+    inserted: row.inserted,
+    updated: row.updated,
+    restored: row.restored,
+    deleted: row.deleted,
+    transitPruned: row.transit_pruned,
+    candidatesPruned: row.candidates_pruned,
+    regions,
+  };
+}
+
+export async function createWorkerRun(db: Knex, startedAt: string): Promise<number> {
+  const [id] = await db<WorkerRunRow>('worker_runs').insert({
+    started_at: startedAt,
+    status: 'running',
+  });
+  return id;
+}
+
+export async function createWorkerRunRegion(
+  db: Knex,
+  runId: number,
+  regionName: string,
+  startedAt: string
+): Promise<number> {
+  const [id] = await db<WorkerRunRegionRow>('worker_run_regions').insert({
+    run_id: runId,
+    region_name: regionName,
+    started_at: startedAt,
+  });
+  return id;
+}
+
+export async function finishWorkerRunRegion(
+  db: Knex,
+  id: number,
+  completedAt: string,
+  placesFetched: number,
+  transitStops: number,
+  candidates: number
+): Promise<void> {
+  await db<WorkerRunRegionRow>('worker_run_regions').where({ id }).update({
+    completed_at: completedAt,
+    places_fetched: placesFetched,
+    transit_stops: transitStops,
+    candidates,
+  });
+}
+
+export async function finishWorkerRun(
+  db: Knex,
+  id: number,
+  completedAt: string,
+  stats: {
+    placesFetched: number;
+    inserted: number;
+    updated: number;
+    restored: number;
+    deleted: number;
+    transitPruned: number;
+    candidatesPruned: number;
+  }
+): Promise<void> {
+  await db<WorkerRunRow>('worker_runs').where({ id }).update({
+    completed_at: completedAt,
+    status: 'success',
+    places_fetched: stats.placesFetched,
+    inserted: stats.inserted,
+    updated: stats.updated,
+    restored: stats.restored,
+    deleted: stats.deleted,
+    transit_pruned: stats.transitPruned,
+    candidates_pruned: stats.candidatesPruned,
+  });
+}
+
+export async function failWorkerRun(
+  db: Knex,
+  id: number,
+  completedAt: string,
+  error: string
+): Promise<void> {
+  await db<WorkerRunRow>('worker_runs').where({ id }).update({
+    completed_at: completedAt,
+    status: 'failed',
+    error,
+  });
+}
+
+export async function getLastWorkerRun(db: Knex): Promise<WorkerRun | null> {
+  const row = await db<WorkerRunRow>('worker_runs')
+    .whereIn('status', ['success', 'failed'])
+    .orderBy('id', 'desc')
+    .first();
+  if (!row) return null;
+
+  const regionRows = await db<WorkerRunRegionRow>('worker_run_regions')
+    .where({ run_id: row.id })
+    .orderBy('id');
+  return rowToWorkerRun(row, regionRows.map(rowToWorkerRunRegion));
 }
 
 export async function softDeleteMissingOsmPlaces(

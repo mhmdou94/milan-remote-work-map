@@ -29,11 +29,16 @@ RUN --mount=type=cache,target=/root/.npm,sharing=locked \
 
 FROM deps AS frontend-builder
 
+ARG BUILD_DATE
+ARG BUILD_SHA
+
 WORKDIR /opt/app
 
 COPY frontend/ ./frontend/
 
-RUN npm run build --workspace=frontend
+RUN VITE_BUILD_DATE=${BUILD_DATE:-$(date -u +'%Y-%m-%d %H:%M')} \
+    VITE_BUILD_SHA=${BUILD_SHA} \
+    npm run build --workspace=frontend
 
 FROM deps AS backend-builder
 
