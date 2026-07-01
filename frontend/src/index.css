@@ -6,16 +6,18 @@
 
 :root {
   /* Colors */
-  --color-primary: #006cff;
-  --color-primary-dark: #005ad6;
-  --color-text: #17212b;
-  --color-text-muted: #51606f;
-  --color-text-faint: #667483;
-  --color-border: #d7e0e8;
-  --color-border-soft: #e3eaf1;
+  --color-primary: #ef6f45;
+  --color-primary-dark: #d85630;
+  --color-primary-soft: #fff0e9;
+  --color-accent: #173f35;
+  --color-text: #18231f;
+  --color-text-muted: #5d6a63;
+  --color-text-faint: #7c8982;
+  --color-border: #d9ddd4;
+  --color-border-soft: #e9ece5;
   --color-bg: #ffffff;
-  --color-bg-soft: #f7fafc;
-  --color-bg-chip: #eef3f7;
+  --color-bg-soft: #f8f5ef;
+  --color-bg-chip: #f0ebe2;
   --color-danger: #b42318;
   --color-good-bg: #effbf6;
   --color-good-border: #c7eadc;
@@ -28,9 +30,9 @@
   --radius-xl: 26px;
 
   /* Shadows */
-  --shadow-card: 0 12px 32px rgba(15, 23, 42, 0.08);
-  --shadow-popover: 0 22px 70px rgba(15, 23, 42, 0.16);
-  --shadow-button: 0 8px 18px rgba(0, 108, 255, 0.22);
+  --shadow-card: 0 18px 45px rgba(38, 31, 20, 0.1);
+  --shadow-popover: 0 26px 80px rgba(38, 31, 20, 0.2);
+  --shadow-button: 0 12px 24px rgba(239, 111, 69, 0.22);
 }
 
 html,
@@ -40,7 +42,10 @@ body {
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   color: var(--color-text);
-  background: var(--color-bg);
+  background:
+    radial-gradient(circle at 20% 0%, rgba(239, 111, 69, 0.12), transparent 32rem),
+    linear-gradient(135deg, #fbf7ef 0%, #f6f1e8 46%, #eef4ef 100%);
+  overscroll-behavior: none;
 }
 
 #app {

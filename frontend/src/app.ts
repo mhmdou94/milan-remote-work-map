@@ -32,7 +32,7 @@ export class RemoteWorkApp extends LitElement {
       width: 100%;
       height: 100%;
       position: relative;
-      background: #fff;
+      background: transparent;
       display: flex;
       flex-direction: column;
     }
@@ -98,12 +98,6 @@ export class RemoteWorkApp extends LitElement {
   }
 
   render() {
-    console.log(
-      '🎨 RemoteWorkApp rendering, page:',
-      this.currentPage,
-      'places:',
-      this.places.length
-    );
     return html`
       <div class="app-container">
         <remote-work-map
@@ -295,7 +289,6 @@ export class RemoteWorkApp extends LitElement {
   }
 
   private handlePlaceSelect = (event: CustomEvent<Place>) => {
-    console.log('📍 Place selected:', event.detail);
     const place = event.detail;
     history.pushState({ viaApp: true }, '', placeUrl(place.id));
     this.selectedPlace = place;
@@ -313,7 +306,6 @@ export class RemoteWorkApp extends LitElement {
   };
 
   private handleDetailClose = () => {
-    console.log('📍 Detail closed');
     if ((history.state as { viaApp?: boolean } | null)?.viaApp) {
       // Pops back to whatever URL we pushed from — popstate then clears
       // selectedPlace via syncSelectedPlaceFromUrl.

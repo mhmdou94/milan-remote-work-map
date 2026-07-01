@@ -5,8 +5,6 @@ import type { Place, PlaceCandidate } from '../types';
 import { getCategoryInfo } from '../categories';
 import { candidateToPlace } from '../lib/place.js';
 
-console.log('📦 MapComponent module loaded');
-
 // CSS links that must be loaded INSIDE shadow DOM
 const LEAFLET_CSS = html`
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -38,6 +36,7 @@ export class MapComponent extends LitElement {
     #map-container {
       width: 100%;
       height: 100%;
+      background: #ebe4d8;
     }
 
     /* menu-nav is a fixed top bar that overlaps the map's top-left corner,
@@ -45,25 +44,49 @@ export class MapComponent extends LitElement {
        of the bar. Leaflet renders its controls inside this shadow root, so
        a plain selector reaches them. */
     .leaflet-top.leaflet-left {
-      top: 64px;
+      top: 86px;
+      left: 16px;
     }
 
     .leaflet-left .leaflet-control {
       margin-left: 16px;
     }
 
+    .leaflet-control-zoom {
+      overflow: hidden;
+      border: 1px solid var(--color-border, #d7e0e8) !important;
+      border-radius: 16px !important;
+      box-shadow: var(--shadow-card, 0 12px 32px rgba(15, 23, 42, 0.08)) !important;
+    }
+
+    .leaflet-control-zoom a {
+      width: 40px !important;
+      height: 40px !important;
+      line-height: 40px !important;
+      border: none !important;
+      color: var(--color-text, #17212b) !important;
+      font-size: 20px !important;
+    }
+
     .emoji-marker {
-      width: 34px;
-      height: 34px;
+      width: 42px;
+      height: 42px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 17px;
+      position: relative;
+      font-size: 19px;
       line-height: 1;
       background: white;
-      border: 2px solid var(--marker-color, #4b5563);
-      border-radius: 50%;
-      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.28);
+      border: 3px solid var(--marker-color, #4b5563);
+      border-radius: 18px 18px 18px 6px;
+      box-shadow: 0 10px 18px rgba(38, 31, 20, 0.28);
+      transform: rotate(-45deg);
+    }
+
+    .emoji-marker span {
+      display: inline-block;
+      transform: rotate(45deg);
     }
 
     .emoji-marker.deleted {
@@ -144,7 +167,7 @@ export class MapComponent extends LitElement {
       z-index: 450;
       padding: 10px 14px;
       box-shadow: var(--shadow-card, 0 12px 32px rgba(15, 23, 42, 0.08));
-      backdrop-filter: blur(6px);
+      backdrop-filter: blur(16px);
       background: rgba(255, 255, 255, 0.95);
     }
 
@@ -157,6 +180,18 @@ export class MapComponent extends LitElement {
     .locate-btn:focus-visible {
       outline: 2px solid var(--color-primary, #006cff);
       outline-offset: 2px;
+    }
+
+    @media (max-width: 920px) {
+      .leaflet-top.leaflet-left {
+        top: 70px;
+        left: 10px;
+      }
+
+      .locate-btn {
+        bottom: 96px;
+        left: 12px;
+      }
     }
   `;
 
@@ -200,7 +235,6 @@ export class MapComponent extends LitElement {
   }
 
   render() {
-    console.log('🎨 MapComponent render called');
     return html`
       ${LEAFLET_CSS}
       <div id="map-container"></div>
@@ -229,24 +263,18 @@ export class MapComponent extends LitElement {
   }
 
   firstUpdated() {
-    console.log('🗺️ MapComponent firstUpdated');
-    console.log('📏 Component size:', this.offsetWidth, 'x', this.offsetHeight);
-
     // Wait for multiple layout cycles to ensure the flexbox layout is fully settled
     let attempts = 0;
     const waitForLayout = () => {
       attempts++;
       const rect = this.getBoundingClientRect();
-      console.log(`  Attempt ${attempts}: size=${rect.width}x${rect.height}`);
 
       // Need both a minimum size and multiple attempts to ensure layout is settled
       if (rect.width > 100 && rect.height > 100 && attempts > 2) {
-        console.log('✓ Layout settled, initializing map');
         this.initMap();
       } else if (attempts < 10) {
         requestAnimationFrame(waitForLayout);
       } else {
-        console.warn('⚠️ Layout timeout, initializing anyway');
         this.initMap();
       }
     };
@@ -256,11 +284,9 @@ export class MapComponent extends LitElement {
 
   updated(changedProperties: Map<string, any>) {
     if (changedProperties.has('places')) {
-      console.log('📍 Places changed, rendering markers. Count:', this.places.length);
       this.renderMarkers();
     }
     if (changedProperties.has('candidates')) {
-      console.log('💡 Candidates changed, rendering markers. Count:', this.candidates.length);
       this.renderCandidateMarkers();
     }
     if (changedProperties.has('selectedPlace')) {
@@ -272,49 +298,33 @@ export class MapComponent extends LitElement {
   }
 
   private initMap() {
-    console.log('🔧 initMap called');
     const container = this.shadowRoot?.querySelector('#map-container') as HTMLElement;
 
     if (!container) {
-      console.error('❌ Map container not found');
+      console.error('Map container not found');
       return;
     }
 
-    // Debug sizing
-    const hostRect = this.getBoundingClientRect();
-    const containerRect = container.getBoundingClientRect();
-    console.log('📏 Host size:', hostRect.width, 'x', hostRect.height);
-    console.log('📏 Container size:', containerRect.width, 'x', containerRect.height);
-    console.log('📏 Container offsetSize:', container.offsetWidth, 'x', container.offsetHeight);
-    console.log('📏 Container clientSize:', container.clientWidth, 'x', container.clientHeight);
-
     try {
-      console.log('📡 Creating map with ES modules');
       this.map = createMap(container);
 
-      // Immediately check map size
-      console.log('✓ Map created, calling invalidateSize');
       this.map.invalidateSize();
 
       this.map.setView([45.4642, 9.19], 13);
-      console.log('✓ View set');
 
       tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
         attribution: '© OpenStreetMap, © CARTO',
         maxZoom: 19,
       }).addTo(this.map);
-      console.log('✓ Tile layer added');
 
       // Initialize marker cluster group
       this.markerCluster = L.markerClusterGroup({
         maxClusterRadius: 80,
       });
       this.map.addLayer(this.markerCluster);
-      console.log('✓ Marker cluster initialized');
 
       this.candidateLayer = L.layerGroup();
       this.map.addLayer(this.candidateLayer);
-      console.log('✓ Candidate layer initialized');
 
       this.map.on('moveend', () => this.updateEmptyState());
 
@@ -325,7 +335,6 @@ export class MapComponent extends LitElement {
         }
       });
       this.resizeObserver.observe(container);
-      console.log('✓ Resize observer active');
 
       // `places` may have already arrived (and triggered `updated()`) before
       // the map finished initializing — that earlier renderMarkers() call
@@ -335,7 +344,7 @@ export class MapComponent extends LitElement {
       this.renderCandidateMarkers();
       this.updateEmptyState();
     } catch (error) {
-      console.error('❌ Error initializing map:', error);
+      console.error('Error initializing map:', error);
     }
   }
 
@@ -355,16 +364,7 @@ export class MapComponent extends LitElement {
   }
 
   private renderMarkers() {
-    console.log(
-      '🎯 renderMarkers called, map:',
-      !!this.map,
-      'cluster:',
-      !!this.markerCluster,
-      'places:',
-      this.places.length
-    );
     if (!this.map || !this.markerCluster) {
-      console.warn('⚠️ Map or cluster not ready');
       return;
     }
 
@@ -374,7 +374,6 @@ export class MapComponent extends LitElement {
 
     // Add new markers
     for (const place of this.places) {
-      console.log(`  📌 Adding marker: ${place.name} at [${place.latitude}, ${place.longitude}]`);
       const marker = L.marker([place.latitude, place.longitude], {
         title: place.name,
         icon: this.createMarkerIcon(place),
@@ -389,7 +388,6 @@ export class MapComponent extends LitElement {
       this.markerCluster.addLayer(marker);
       this.markers.set(place.id, marker);
     }
-    console.log('✓ Markers rendered, total:', this.markers.size);
   }
 
   private renderCandidateMarkers() {
@@ -402,11 +400,11 @@ export class MapComponent extends LitElement {
       const marker = L.marker([candidate.latitude, candidate.longitude], {
         title: candidate.name,
         icon: L.divIcon({
-          html: `<div class="emoji-marker candidate" style="--marker-color:${color}">${emoji}</div>`,
+          html: `<div class="emoji-marker candidate" style="--marker-color:${color}"><span>${emoji}</span></div>`,
           className: '',
-          iconSize: [34, 34],
-          iconAnchor: [17, 17],
-          popupAnchor: [0, -17],
+          iconSize: [42, 42],
+          iconAnchor: [21, 38],
+          popupAnchor: [0, -34],
         }),
       });
 
@@ -440,11 +438,11 @@ export class MapComponent extends LitElement {
           ? ' restricted'
           : '';
     return L.divIcon({
-      html: `<div class="emoji-marker${place.deletedAt ? ' deleted' : ''}${statusClass}" style="--marker-color:${color}">${emoji}</div>`,
+      html: `<div class="emoji-marker${place.deletedAt ? ' deleted' : ''}${statusClass}" style="--marker-color:${color}"><span>${emoji}</span></div>`,
       className: '',
-      iconSize: [34, 34],
-      iconAnchor: [17, 17],
-      popupAnchor: [0, -17],
+      iconSize: [42, 42],
+      iconAnchor: [21, 38],
+      popupAnchor: [0, -34],
     });
   }
 
@@ -487,7 +485,7 @@ export class MapComponent extends LitElement {
         }
       },
       () => {
-        console.log('Geolocation not available, using default center');
+        return;
       }
     );
   };

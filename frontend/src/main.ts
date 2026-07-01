@@ -1,16 +1,10 @@
 import './app.js';
 
-console.log('🚀 Main.ts loaded');
-
 const app = document.getElementById('app');
-console.log('📍 App element:', app);
 
 if (app) {
-  console.log('✓ Creating remote-work-app element');
   const remoteWorkApp = document.createElement('remote-work-app');
-  console.log('✓ Appending to DOM');
   app.appendChild(remoteWorkApp);
-  console.log('✓ Done');
 
   // Set up communication with global UI elements
   const menuNav = document.getElementById('menu-nav') as any;
@@ -38,7 +32,6 @@ if (app) {
   if (menuNav) {
     menuNav.addEventListener('page-change', (event: Event) => {
       const page = (event as CustomEvent).detail;
-      console.log('🎯 Page change event:', page);
       app_.navigateToPage(page);
       syncGlobalUi();
     });
@@ -48,7 +41,6 @@ if (app) {
   if (filterPopover) {
     filterPopover.addEventListener('filters-change', (event: Event) => {
       const filters = (event as CustomEvent).detail;
-      console.log('🎯 Filters change event:', filters);
       app_.applyFilters(filters);
     });
   }
@@ -56,5 +48,5 @@ if (app) {
   remoteWorkApp.addEventListener('ui-state-change', syncGlobalUi);
   syncGlobalUi();
 } else {
-  console.error('❌ App element not found!');
+  console.error('App element not found');
 }
