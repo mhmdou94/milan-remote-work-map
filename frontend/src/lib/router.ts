@@ -9,12 +9,13 @@ export function placeUrl(id: string): string {
   return `/p/${encodeURIComponent(id)}`;
 }
 
-export type Page = 'map' | 'list' | 'contribute' | 'about';
+export type Page = 'map' | 'list' | 'contribute' | 'faq' | 'about';
 
 const PAGE_PATHS: Record<Page, string> = {
   map: '/',
   list: '/list',
   contribute: '/contribute',
+  faq: '/faq',
   about: '/about',
 };
 

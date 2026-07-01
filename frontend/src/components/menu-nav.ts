@@ -1,15 +1,20 @@
 import { LitElement, html, css } from 'lit';
 import { property, state } from 'lit/decorators.js';
 
-const PAGES: { id: 'map' | 'list' | 'contribute' | 'about'; label: string; icon: string }[] = [
+const PAGES: {
+  id: 'map' | 'list' | 'contribute' | 'faq' | 'about';
+  label: string;
+  icon: string;
+}[] = [
   { id: 'map', label: 'Map', icon: '🗺️' },
   { id: 'list', label: 'List', icon: '📋' },
   { id: 'contribute', label: 'Contribute', icon: '➕' },
+  { id: 'faq', label: 'FAQ', icon: '❓' },
   { id: 'about', label: 'About', icon: 'ℹ️' },
 ];
 
 export class MenuNav extends LitElement {
-  @property() declare currentPage: 'map' | 'list' | 'contribute' | 'about';
+  @property() declare currentPage: 'map' | 'list' | 'contribute' | 'faq' | 'about';
   @state() declare open: boolean;
 
   constructor() {
@@ -149,7 +154,7 @@ export class MenuNav extends LitElement {
     }
   };
 
-  private changePage(page: 'map' | 'list' | 'contribute' | 'about') {
+  private changePage(page: 'map' | 'list' | 'contribute' | 'faq' | 'about') {
     this.currentPage = page;
     this.open = false;
     this.dispatchEvent(

@@ -23,4 +23,20 @@ test.describe('Page navigation', () => {
     await menuNav.locator('.menu-item').filter({ hasText: 'Map' }).click();
     await expect(page.locator('remote-work-map')).toBeVisible();
   });
+
+  test('navigates to FAQ page and shows expected content', async ({ page }) => {
+    await page.goto('/');
+
+    const menuNav = page.locator('menu-nav');
+    await expect(menuNav).toBeVisible();
+    const menuToggle = menuNav.locator('.menu-toggle');
+
+    await menuToggle.click();
+    await menuNav.locator('.menu-item').filter({ hasText: 'FAQ' }).click();
+
+    await expect(page).toHaveURL('/faq');
+    await expect(page.locator('.page-content h2').first()).toHaveText('FAQ');
+    await expect(page.locator('.faq-list')).toContainText('laptop=yes');
+    await expect(page.locator('.faq-list')).toContainText('9 AM UTC');
+  });
 });
