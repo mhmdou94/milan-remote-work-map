@@ -4,7 +4,8 @@ import { getPlaceCandidates, getCandidateClusters } from '../db/queries.js';
 import { ClusterGeoJSONFeature, PlaceCandidate, PlaceCluster } from '../types.js';
 import { parseBboxParam } from './bbox.js';
 
-const CLUSTER_THRESHOLD_DEG = 0.5;
+// ~25 km at mid-latitude (25 / 111 ≈ 0.225°)
+const CLUSTER_THRESHOLD_DEG = 0.225;
 
 function clusterCellSize(latSpan: number): number {
   return Math.max(0.05, Math.round((latSpan / 10) * 100) / 100);

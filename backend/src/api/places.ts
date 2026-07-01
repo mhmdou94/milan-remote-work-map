@@ -11,7 +11,8 @@ import {
 import { parseBboxParam } from './bbox.js';
 
 // Switch to clustering when the viewport spans more than this many degrees of latitude.
-const CLUSTER_THRESHOLD_DEG = 0.5;
+// ~25 km at mid-latitude (25 / 111 ≈ 0.225°)
+const CLUSTER_THRESHOLD_DEG = 0.225;
 
 function clusterCellSize(latSpan: number): number {
   return Math.max(0.05, Math.round((latSpan / 10) * 100) / 100);
