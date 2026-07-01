@@ -6,7 +6,7 @@ async function panMapTo(
   page: Parameters<Parameters<typeof test>[1]>[0],
   lat: number,
   lon: number,
-  zoom = 13,
+  zoom = 13
 ) {
   await page.evaluate(
     ({ lat, lon, zoom }) => {
@@ -17,7 +17,7 @@ async function panMapTo(
         mapEl.map.setView([lat, lon], zoom);
       });
     },
-    { lat, lon, zoom },
+    { lat, lon, zoom }
   );
 }
 
@@ -37,7 +37,7 @@ test.describe('Viewport-aware fetching', () => {
 
     // Pan to Rome and capture the debounced refetch
     const romaFetch = page.waitForResponse(
-      (res) => res.url().includes('/api/places') && !res.url().includes('/candidates'),
+      (res) => res.url().includes('/api/places') && !res.url().includes('/candidates')
     );
     await panMapTo(page, 41.9028, 12.4964);
     const response = await romaFetch;
@@ -61,7 +61,7 @@ test.describe('Viewport-aware fetching', () => {
 
     // Pan to Rome before enabling the filter
     const movedFetch = page.waitForResponse(
-      (res) => res.url().includes('/api/places') && !res.url().includes('/candidates'),
+      (res) => res.url().includes('/api/places') && !res.url().includes('/candidates')
     );
     await panMapTo(page, 41.9028, 12.4964);
     await movedFetch;
@@ -75,7 +75,7 @@ test.describe('Viewport-aware fetching', () => {
       .locator('input[type="checkbox"]');
 
     const candidatesFetch = page.waitForResponse((res) =>
-      res.url().includes('/api/places/candidates'),
+      res.url().includes('/api/places/candidates')
     );
     await candidatesCheckbox.check();
     const response = await candidatesFetch;
@@ -104,7 +104,7 @@ test.describe('Viewport-aware fetching', () => {
       .locator('input[type="checkbox"]');
 
     const candidatesFetch = page.waitForResponse((res) =>
-      res.url().includes('/api/places/candidates'),
+      res.url().includes('/api/places/candidates')
     );
     await candidatesCheckbox.check();
     const response = await candidatesFetch;

@@ -188,7 +188,7 @@ async function main(): Promise<void> {
     await closeDb(db);
 
     console.log(
-      `\n✅ Seed complete! ${SEED_PLACES.length} test places, ${SEED_CANDIDATES.length} candidates in database`,
+      `\n✅ Seed complete! ${SEED_PLACES.length} test places, ${SEED_CANDIDATES.length} candidates in database`
     );
     console.log(`📍 Test API: http://localhost:3000/api/places?bbox=45.3,9.0,45.6,9.4\n`);
   } catch (error) {
