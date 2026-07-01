@@ -18,6 +18,7 @@ import {
   type Page,
 } from './lib/router.js';
 import { candidateToPlace } from './lib/place.js';
+import { debounce } from './lib/debounce.js';
 
 export class RemoteWorkApp extends LitElement {
   static styles = css`
@@ -109,6 +110,8 @@ export class RemoteWorkApp extends LitElement {
           .error=${this.placesError}
           @place-selected=${this.handlePlaceSelect}
           @retry-places=${this.retryPlaces}
+          @map-ready=${this.handleMapReady}
+          @map-moved=${this.handleMapMoved}
           id="map"
           class=${this.currentPage !== 'map' ? 'hidden-page' : ''}
         ></remote-work-map>
@@ -141,7 +144,6 @@ export class RemoteWorkApp extends LitElement {
     window.addEventListener('popstate', this.handlePopState);
     this.syncPageFromUrl();
     this.emitUiState();
-    await this.fetchPlaces();
     await this.syncSelectedPlaceFromUrl();
   }
 
@@ -150,30 +152,40 @@ export class RemoteWorkApp extends LitElement {
     window.removeEventListener('popstate', this.handlePopState);
   }
 
+  private handleMapReady = async (event: CustomEvent<BBox>) => {
+    await this.fetchPlaces(event.detail);
+    if (this.filters.showCandidates) {
+      await this.fetchCandidates(event.detail);
+    }
+  };
+
+  private handleMapMoved = debounce(async (event: CustomEvent<BBox>) => {
+    await this.fetchPlaces(event.detail);
+    if (this.filters.showCandidates) {
+      await this.fetchCandidates(event.detail);
+    }
+  }, 400);
+
   async applyFilters(filters: typeof this.filters) {
     this.filters = filters;
-    await this.fetchPlaces();
+    const bbox = this.mapComponent?.getCurrentBbox();
+    if (!bbox) return;
+    await this.fetchPlaces(bbox);
 
     if (this.filters.showCandidates) {
-      await this.fetchCandidates();
+      await this.fetchCandidates(bbox);
     } else {
       this.candidates = [];
     }
   }
 
-  async fetchPlaces(bbox?: BBox) {
+  async fetchPlaces(bbox: BBox) {
     this.placesLoading = true;
     this.placesError = null;
 
     try {
       const params = new URLSearchParams();
-
-      if (bbox) {
-        params.append('bbox', `${bbox.minLat},${bbox.minLon},${bbox.maxLat},${bbox.maxLon}`);
-      } else {
-        // Default Milan bbox
-        params.append('bbox', '45.3,9.0,45.6,9.4');
-      }
+      params.append('bbox', `${bbox.minLat},${bbox.minLon},${bbox.maxLat},${bbox.maxLon}`);
 
       if (this.filters.internetAccess) {
         params.append('internet_access', 'yes');
@@ -208,14 +220,10 @@ export class RemoteWorkApp extends LitElement {
     }
   }
 
-  async fetchCandidates(bbox?: BBox) {
+  async fetchCandidates(bbox: BBox) {
     try {
       const params = new URLSearchParams();
-      if (bbox) {
-        params.append('bbox', `${bbox.minLat},${bbox.minLon},${bbox.maxLat},${bbox.maxLon}`);
-      } else {
-        params.append('bbox', '45.3,9.0,45.6,9.4');
-      }
+      params.append('bbox', `${bbox.minLat},${bbox.minLon},${bbox.maxLat},${bbox.maxLon}`);
 
       const res = await fetch(`/api/places/candidates?${params}`);
       const data = await res.json();
@@ -295,7 +303,9 @@ export class RemoteWorkApp extends LitElement {
   };
 
   private retryPlaces = () => {
-    this.fetchPlaces();
+    const bbox = this.mapComponent?.getCurrentBbox();
+    if (!bbox) return;
+    this.fetchPlaces(bbox);
   };
 
   private handleViewOnMap = () => {
