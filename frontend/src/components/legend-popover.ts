@@ -19,8 +19,8 @@ export class LegendPopover extends LitElement {
 
     :host {
       position: fixed;
-      top: 16px;
-      right: 68px;
+      top: 18px;
+      right: 142px;
       z-index: 700;
       font-family:
         -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
@@ -29,20 +29,30 @@ export class LegendPopover extends LitElement {
     .legend-btn {
       background: rgba(255, 255, 255, 0.95);
       border: 1px solid var(--color-border, #d7e0e8);
-      border-radius: var(--radius-md, 14px);
+      border-radius: 999px;
       cursor: pointer;
       box-shadow: var(--shadow-card, 0 12px 32px rgba(15, 23, 42, 0.08));
-      backdrop-filter: blur(6px);
-      font-size: 19px;
-      width: 44px;
-      height: 44px;
+      backdrop-filter: blur(16px);
+      color: var(--color-text, #17212b);
+      font-size: 13px;
+      font-weight: 900;
+      gap: 8px;
+      min-width: 112px;
+      height: 48px;
+      padding: 0 15px;
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: transform 0.15s ease;
     }
 
     .legend-btn:hover {
       border-color: var(--color-primary, #006cff);
+      transform: translateY(-1px);
+    }
+
+    .legend-icon {
+      font-size: 16px;
     }
 
     .legend-btn:focus-visible {
@@ -56,11 +66,11 @@ export class LegendPopover extends LitElement {
       right: 0;
       background: rgba(255, 255, 255, 0.97);
       border: 1px solid var(--color-border, #d7e0e8);
-      border-radius: var(--radius-lg, 20px);
+      border-radius: 24px;
       box-shadow: var(--shadow-popover, 0 22px 70px rgba(15, 23, 42, 0.16));
-      backdrop-filter: blur(8px);
-      padding: 14px;
-      min-width: 210px;
+      backdrop-filter: blur(16px);
+      padding: 16px;
+      min-width: 240px;
     }
 
     .legend-title {
@@ -101,6 +111,18 @@ export class LegendPopover extends LitElement {
     .legend-label {
       color: var(--color-text, #17212b);
     }
+
+    @media (max-width: 920px) {
+      :host {
+        top: 12px;
+        right: 124px;
+      }
+
+      .legend-btn {
+        min-width: 100px;
+        height: 44px;
+      }
+    }
   `;
 
   render() {
@@ -114,7 +136,8 @@ export class LegendPopover extends LitElement {
         aria-controls="legend-panel"
         title="Toggle legend"
       >
-        🗺️
+        <span class="legend-icon">🗺️</span>
+        Legend
       </button>
 
       ${this.open
