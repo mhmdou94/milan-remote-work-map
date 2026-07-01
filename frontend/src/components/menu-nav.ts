@@ -29,7 +29,7 @@ export class MenuNav extends LitElement {
       position: fixed;
       top: 16px;
       left: 16px;
-      z-index: 700;
+      z-index: 900;
       font-family:
         -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     }
@@ -53,10 +53,16 @@ export class MenuNav extends LitElement {
       border-color: var(--color-primary, #006cff);
     }
 
+    .menu-toggle:focus-visible,
+    .menu-item:focus-visible {
+      outline: 2px solid var(--color-primary, #006cff);
+      outline-offset: 2px;
+    }
+
     .menu-panel {
       position: absolute;
-      top: 52px;
-      left: 0;
+      top: 0;
+      left: 52px;
       display: flex;
       flex-direction: column;
       gap: 2px;
@@ -104,20 +110,23 @@ export class MenuNav extends LitElement {
       <button
         class="menu-toggle"
         @click=${this.toggleOpen}
+        @keydown=${this.handleKeydown}
         aria-label="Open navigation menu"
         aria-expanded=${this.open}
+        aria-controls="main-navigation"
       >
         ${this.open ? '✕' : '☰'}
       </button>
 
       ${this.open
         ? html`
-            <nav class="menu-panel">
+            <nav id="main-navigation" class="menu-panel" @keydown=${this.handleKeydown}>
               ${PAGES.map(
                 (page) => html`
                   <button
                     class="menu-item ${this.currentPage === page.id ? 'active' : ''}"
                     @click=${() => this.changePage(page.id)}
+                    aria-current=${this.currentPage === page.id ? 'page' : 'false'}
                   >
                     <span class="menu-icon">${page.icon}</span>
                     ${page.label}
@@ -133,6 +142,12 @@ export class MenuNav extends LitElement {
   private toggleOpen() {
     this.open = !this.open;
   }
+
+  private handleKeydown = (event: KeyboardEvent) => {
+    if (event.key === 'Escape') {
+      this.open = false;
+    }
+  };
 
   private changePage(page: 'map' | 'list' | 'contribute' | 'about') {
     this.currentPage = page;

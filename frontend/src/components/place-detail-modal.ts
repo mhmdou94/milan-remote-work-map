@@ -453,6 +453,14 @@ export class PlaceDetailModal extends LitElement {
       color: #f59e0b;
     }
 
+    .star-btn:focus-visible,
+    .close-btn:focus-visible,
+    .link-btn:focus-visible,
+    .view-map-btn:focus-visible {
+      outline: 2px solid var(--color-primary, #006cff);
+      outline-offset: 2px;
+    }
+
     .review-textarea {
       font-size: 13px;
       padding: 9px;
@@ -517,6 +525,23 @@ export class PlaceDetailModal extends LitElement {
     .action-row .link-btn:only-child {
       grid-column: 1 / -1;
     }
+
+    .view-map-btn {
+      background: var(--color-primary, #006cff);
+      color: white;
+      border: 1px solid var(--color-primary, #006cff);
+      padding: 11px;
+      border-radius: var(--radius-md, 14px);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 800;
+      font-family: inherit;
+      box-shadow: var(--shadow-button, 0 8px 18px rgba(0, 108, 255, 0.22));
+    }
+
+    .view-map-btn:hover {
+      background: var(--color-primary-dark, #005ad6);
+    }
   `;
 
   render() {
@@ -527,11 +552,16 @@ export class PlaceDetailModal extends LitElement {
     return html`
       <div
         class="modal-backdrop"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="place-detail-title"
+        tabindex="-1"
+        @keydown=${this.handleKeydown}
         style="--category-color:${categoryInfo.color}; --category-bg:${categoryInfo.color}1a;"
       >
         <div class="modal-header">
           <div>
-            <div class="modal-title">${this.place.name}</div>
+            <div id="place-detail-title" class="modal-title">${this.place.name}</div>
             ${this.place.category
               ? html`
                   <div class="modal-category">
@@ -609,6 +639,12 @@ export class PlaceDetailModal extends LitElement {
       this.loadReviews();
       this.loadNearbyTransit();
     }
+  }
+
+  firstUpdated() {
+    this.updateComplete.then(() => {
+      this.renderRoot.querySelector<HTMLButtonElement>('.close-btn')?.focus();
+    });
   }
 
   disconnectedCallback() {
@@ -760,6 +796,8 @@ export class PlaceDetailModal extends LitElement {
                 <button
                   type="button"
                   class="star-btn ${displayRating && v <= displayRating ? 'filled' : ''}"
+                  aria-label=${`Rate ${v / 20} star${v === 20 ? '' : 's'}`}
+                  aria-pressed=${this.selectedRating === v}
                   @click=${() => (this.selectedRating = v)}
                   @mouseenter=${() => (this.hoverRating = v)}
                   @mouseleave=${() => (this.hoverRating = null)}
@@ -1086,14 +1124,13 @@ export class PlaceDetailModal extends LitElement {
   private renderActionRow() {
     if (!this.place) return html``;
 
-    const links: { label: string; href: string; primary?: boolean }[] = [];
+    const links: { label: string; href: string }[] = [];
 
     links.push({
       label: 'Open in Google Maps',
       href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
         `${this.place.name},${this.place.latitude},${this.place.longitude}`
       )}`,
-      primary: true,
     });
 
     if (this.place.website) {
@@ -1120,16 +1157,10 @@ export class PlaceDetailModal extends LitElement {
 
     return html`
       <div class="action-row">
+        <button class="view-map-btn" type="button" @click=${this.viewOnMap}>View on map</button>
         ${links.map(
           (link) => html`
-            <a
-              class="link-btn ${link.primary ? 'primary' : ''}"
-              href=${link.href}
-              target="_blank"
-              rel="noopener"
-            >
-              ${link.label}
-            </a>
+            <a class="link-btn" href=${link.href} target="_blank" rel="noopener"> ${link.label} </a>
           `
         )}
       </div>
@@ -1139,6 +1170,16 @@ export class PlaceDetailModal extends LitElement {
   private close() {
     this.dispatchEvent(new CustomEvent('close'));
   }
+
+  private viewOnMap() {
+    this.dispatchEvent(new CustomEvent('view-on-map'));
+  }
+
+  private handleKeydown = (event: KeyboardEvent) => {
+    if (event.key === 'Escape') {
+      this.close();
+    }
+  };
 }
 
 customElements.define('place-detail-modal', PlaceDetailModal);
