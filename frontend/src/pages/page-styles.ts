@@ -16,7 +16,7 @@ export const pageHostStyles = css`
     width: 100%;
     min-height: 0;
     overflow-y: auto;
-    padding: 80px 24px 32px;
+    padding: 104px 24px 48px;
     box-sizing: border-box;
     font-family:
       -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
@@ -50,5 +50,11 @@ export const pageHostStyles = css`
 
   .page-content a:hover {
     text-decoration: underline;
+  }
+
+  @media (max-width: 860px) {
+    :host {
+      padding: 82px 14px 112px;
+    }
   }
 `;

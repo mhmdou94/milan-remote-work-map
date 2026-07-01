@@ -1,16 +1,10 @@
 import './app.js';
 
-console.log('🚀 Main.ts loaded');
-
 const app = document.getElementById('app');
-console.log('📍 App element:', app);
 
 if (app) {
-  console.log('✓ Creating remote-work-app element');
   const remoteWorkApp = document.createElement('remote-work-app');
-  console.log('✓ Appending to DOM');
   app.appendChild(remoteWorkApp);
-  console.log('✓ Done');
 
   // Set up communication with global UI elements
   const menuNav = document.getElementById('menu-nav') as any;
@@ -20,7 +14,6 @@ if (app) {
   // Listen for page changes from menu-nav
   if (menuNav) {
     menuNav.addEventListener('page-change', (event: CustomEvent) => {
-      console.log('🎯 Page change event:', event.detail);
       app_.navigateToPage(event.detail);
     });
   }
@@ -28,7 +21,6 @@ if (app) {
   // Listen for filter changes from filter-popover
   if (filterPopover) {
     filterPopover.addEventListener('filters-change', (event: CustomEvent) => {
-      console.log('🎯 Filters change event:', event.detail);
       app_.applyFilters(event.detail);
     });
   }
@@ -40,5 +32,5 @@ if (app) {
     }
   }, 100);
 } else {
-  console.error('❌ App element not found!');
+  console.error('App element not found');
 }

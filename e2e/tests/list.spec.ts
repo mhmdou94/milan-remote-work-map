@@ -5,13 +5,12 @@ test.describe('List page', () => {
     await page.goto('/');
 
     const menuNav = page.locator('menu-nav');
-    await menuNav.locator('.menu-toggle').click();
     await menuNav.locator('.menu-item').filter({ hasText: 'List' }).click();
 
     const listPage = page.locator('list-page');
     await expect(listPage).toBeVisible();
 
-    const searchButton = listPage.locator('button', { hasText: 'Search' });
+    const searchButton = listPage.locator('button', { hasText: 'Show places' });
     await expect(searchButton).toBeDisabled();
 
     await listPage.locator('select').selectOption('Milano');
@@ -49,7 +48,6 @@ test.describe('List page', () => {
     await page.goto('/');
 
     const menuNav = page.locator('menu-nav');
-    await menuNav.locator('.menu-toggle').click();
     await menuNav.locator('.menu-item').filter({ hasText: 'List' }).click();
 
     const listPage = page.locator('list-page');
@@ -58,7 +56,7 @@ test.describe('List page', () => {
     const placesResponse = page.waitForResponse(
       (res) => res.url().includes('/api/places') && res.url().includes('city=Milano')
     );
-    await listPage.locator('button', { hasText: 'Search' }).click();
+    await listPage.locator('button', { hasText: 'Show places' }).click();
     await placesResponse;
 
     const restrictedItem = listPage.locator('.result-item', { hasText: 'Ristorante Alla Scala' });
@@ -87,7 +85,6 @@ test.describe('List page', () => {
     await page.goto('/');
 
     const menuNav = page.locator('menu-nav');
-    await menuNav.locator('.menu-toggle').click();
     await menuNav.locator('.menu-item').filter({ hasText: 'List' }).click();
     await citiesResponse;
 

@@ -6,20 +6,16 @@ test.describe('Page navigation', () => {
 
     const menuNav = page.locator('menu-nav');
     await expect(menuNav).toBeVisible();
-    const menuToggle = menuNav.locator('.menu-toggle');
 
-    await menuToggle.click();
     await menuNav.locator('.menu-item').filter({ hasText: 'Contribute' }).click();
     await expect(page.locator('.page-content h2').first()).toHaveText('How to Contribute');
     await expect(page.locator('.page-content')).toContainText('Which tags we use');
     await expect(page.locator('.tags-table')).toContainText('laptop=yes');
     await expect(page.locator('.tags-table')).toContainText('internet_access');
 
-    await menuToggle.click();
     await menuNav.locator('.menu-item').filter({ hasText: 'About' }).click();
     await expect(page.locator('.page-content h2').first()).toHaveText('About');
 
-    await menuToggle.click();
     await menuNav.locator('.menu-item').filter({ hasText: 'Map' }).click();
     await expect(page.locator('remote-work-map')).toBeVisible();
   });

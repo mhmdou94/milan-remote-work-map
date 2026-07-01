@@ -32,7 +32,7 @@ export class FilterPopover extends LitElement {
 
     :host {
       position: fixed;
-      top: 16px;
+      top: 18px;
       right: 16px;
       z-index: 700;
       font-family:
@@ -41,34 +41,39 @@ export class FilterPopover extends LitElement {
 
     .filter-btn {
       position: relative;
-      background: rgba(255, 255, 255, 0.95);
+      gap: 8px;
+      min-width: 112px;
+      height: 48px;
+      padding: 0 15px;
+      background: var(--color-accent, #173f35);
+      color: #fffaf1;
       border: 1px solid var(--color-border, #d7e0e8);
-      border-radius: var(--radius-md, 14px);
+      border-radius: 999px;
       cursor: pointer;
-      box-shadow: var(--shadow-card, 0 12px 32px rgba(15, 23, 42, 0.08));
-      backdrop-filter: blur(6px);
-      font-size: 19px;
+      box-shadow: 0 16px 34px rgba(23, 63, 53, 0.22);
+      font-size: 13px;
+      font-weight: 900;
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 44px;
-      height: 44px;
     }
 
     .filter-btn:hover {
-      border-color: var(--color-primary, #006cff);
+      transform: translateY(-1px);
+    }
+
+    .filter-icon {
+      font-size: 16px;
     }
 
     .filter-badge {
-      position: absolute;
-      top: -6px;
-      right: -6px;
       background: var(--color-primary, #006cff);
       color: white;
       border-radius: 50%;
-      width: 19px;
-      height: 19px;
-      font-size: 11px;
+      min-width: 21px;
+      height: 21px;
+      padding: 0 6px;
+      font-size: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -82,11 +87,11 @@ export class FilterPopover extends LitElement {
       right: 0;
       background: rgba(255, 255, 255, 0.97);
       border: 1px solid var(--color-border, #d7e0e8);
-      border-radius: var(--radius-lg, 20px);
+      border-radius: 24px;
       box-shadow: var(--shadow-popover, 0 22px 70px rgba(15, 23, 42, 0.16));
-      backdrop-filter: blur(8px);
-      padding: 16px;
-      min-width: 250px;
+      backdrop-filter: blur(16px);
+      padding: 18px;
+      width: min(360px, calc(100vw - 32px));
       z-index: 701;
     }
 
@@ -121,6 +126,10 @@ export class FilterPopover extends LitElement {
       gap: 8px;
     }
 
+    .filter-item.wide {
+      width: 100%;
+    }
+
     .filter-item {
       position: relative;
       display: block;
@@ -143,7 +152,7 @@ export class FilterPopover extends LitElement {
       display: inline-flex;
       align-items: center;
       min-height: 36px;
-      border-radius: var(--radius-md, 14px);
+      border-radius: 999px;
       border: 1px solid var(--color-border, #d7e0e8);
       background: white;
       color: var(--color-text, #17212b);
@@ -164,6 +173,17 @@ export class FilterPopover extends LitElement {
 
     .filter-item input[type='checkbox']:checked + .filter-label {
       border-color: var(--color-primary, #006cff);
+      background: var(--color-primary-soft, #fff0e9);
+      color: var(--color-primary-dark, #d85630);
+      box-shadow: inset 0 0 0 1px var(--color-primary, #006cff);
+    }
+
+    .filter-item.wide .filter-label {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .filter-item.wide input[type='checkbox']:checked + .filter-label {
       background: var(--color-primary, #006cff);
       color: white;
       box-shadow: var(--shadow-button, 0 8px 18px rgba(0, 108, 255, 0.22));
@@ -188,6 +208,18 @@ export class FilterPopover extends LitElement {
       letter-spacing: 0.06em;
       margin-bottom: 8px;
     }
+
+    @media (max-width: 860px) {
+      :host {
+        top: 12px;
+        right: 12px;
+      }
+
+      .filter-btn {
+        min-width: 104px;
+        height: 44px;
+      }
+    }
   `;
 
   render() {
@@ -195,7 +227,8 @@ export class FilterPopover extends LitElement {
 
     return html`
       <button class="filter-btn" @click=${this.toggleOpen} title="Toggle filters">
-        🔽 ${activeCount > 0 ? html` <span class="filter-badge">${activeCount}</span> ` : ''}
+        <span class="filter-icon">⚙</span>
+        Filters ${activeCount > 0 ? html` <span class="filter-badge">${activeCount}</span> ` : ''}
       </button>
 
       ${this.open
@@ -209,7 +242,7 @@ export class FilterPopover extends LitElement {
               </div>
 
               <div class="filter-group">
-                <label class="filter-item">
+                <label class="filter-item wide">
                   <input
                     type="checkbox"
                     .checked=${this.filters.internetAccess}
