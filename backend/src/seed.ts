@@ -39,7 +39,7 @@ export const SEED_PLACES: Place[] = [
     longitude: 9.2042,
     address: 'Via Ambrosini, 10 Milano',
     city: 'Milano',
-    internetAccess: 'wired',
+    internetAccess: 'wlan',
     sockets: 'no',
     openingHours: 'Mo-Fr 10:00-18:00; Sa 10:00-16:00',
     laptopStatus: 'yes',

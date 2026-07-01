@@ -899,7 +899,12 @@ export class PlaceDetailModal extends LitElement {
       amenities.push({
         icon: '📡',
         name: 'Internet',
-        value: this.place.internetAccess === 'yes' ? 'Yes' : 'Wired',
+        value:
+          this.place.internetAccess === 'yes'
+            ? 'Yes'
+            : this.place.internetAccess === 'wlan'
+              ? 'WiFi'
+              : 'Wired',
         tone: 'good',
       });
     }

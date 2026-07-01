@@ -342,7 +342,9 @@ export class ListPage extends LitElement {
                 ${place.laptopStatus === 'restricted'
                   ? html`<span title="Laptop use restricted">⚠️</span>`
                   : ''}
-                ${place.internetAccess === 'yes' || place.internetAccess === 'wired'
+                ${place.internetAccess === 'yes' ||
+                place.internetAccess === 'wired' ||
+                place.internetAccess === 'wlan'
                   ? html`<span title="Internet access">📶</span>`
                   : ''}
                 ${place.sockets === 'yes' || place.sockets === 'many'

@@ -6,7 +6,7 @@ export interface Place {
   longitude: number;
   address?: string;
   city?: string;
-  internetAccess?: 'yes' | 'no' | 'wired';
+  internetAccess?: InternetAccess;
   sockets?: 'yes' | 'no' | 'many';
   openingHours?: string;
   laptopStatus?: 'yes' | 'no' | 'restricted';
@@ -52,7 +52,7 @@ export interface StagedPlace {
   longitude: number;
   address?: string;
   city?: string;
-  internetAccess?: 'yes' | 'no' | 'wired';
+  internetAccess?: InternetAccess;
   sockets?: 'yes' | 'no' | 'many';
   openingHours?: string;
   laptopStatus?: 'yes' | 'no' | 'restricted';
@@ -114,11 +114,13 @@ export interface PlaceCandidate {
   longitude: number;
   address?: string;
   city?: string;
-  internetAccess?: 'yes' | 'no' | 'wired';
+  internetAccess?: InternetAccess;
   sockets?: 'yes' | 'no' | 'many';
   osmTags?: Record<string, string>;
   lastSynced?: string;
 }
+
+export type InternetAccess = 'yes' | 'no' | 'wired' | 'wlan';
 
 export interface GeoJSONFeature {
   type: 'Feature';
