@@ -226,6 +226,12 @@ export class FilterPopover extends LitElement {
         min-width: 104px;
         height: 44px;
       }
+
+      .filter-popover {
+        max-height: calc(100dvh - 160px - env(safe-area-inset-bottom));
+        overflow-y: auto;
+        width: min(360px, calc(100vw - 24px));
+      }
     }
   `;
 
@@ -320,6 +326,9 @@ export class FilterPopover extends LitElement {
 
   private toggleOpen() {
     this.open = !this.open;
+    if (this.open) {
+      this.dispatchEvent(new CustomEvent('filter-opened'));
+    }
   }
 
   private handleKeydown = (event: KeyboardEvent) => {

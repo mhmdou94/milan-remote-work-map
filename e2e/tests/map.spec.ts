@@ -60,4 +60,39 @@ test.describe('Map page', () => {
     const names = geojson.features.map((f: { properties: { name: string } }) => f.properties.name);
     expect(names).toContain('Biblioteca Ambrosiana');
   });
+
+  test('mobile controls stay usable above map chrome', async ({ page, context }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await context.grantPermissions(['geolocation']);
+    await context.setGeolocation({ latitude: 45.4642, longitude: 9.19 });
+
+    await page.goto('/');
+
+    const filterButton = page.locator('filter-popover .filter-btn');
+    const legendButton = page.locator('legend-popover .legend-btn');
+
+    await filterButton.click();
+    await expect(page.locator('filter-popover .filter-popover')).toBeVisible();
+
+    await legendButton.click();
+    await expect(page.locator('legend-popover .legend-popover')).toBeVisible();
+    await expect(page.locator('filter-popover .filter-popover')).toHaveCount(0);
+
+    const locateButton = page.locator('remote-work-map .locate-btn');
+    await locateButton.click();
+    await expect(locateButton).toContainText('Locate me');
+  });
+
+  test('mobile place detail actions are above the bottom navigation', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/p/test-1');
+
+    await expect(page.locator('place-detail-modal')).toBeVisible();
+
+    const viewOnMap = page.locator('place-detail-modal .view-map-btn');
+    await viewOnMap.click();
+
+    await expect(page).toHaveURL('/p/test-1');
+    await expect(page.locator('remote-work-map')).toBeVisible();
+  });
 });

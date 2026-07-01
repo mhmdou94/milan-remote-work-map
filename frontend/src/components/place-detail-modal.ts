@@ -64,7 +64,7 @@ export class PlaceDetailModal extends LitElement {
       bottom: 0;
       left: 0;
       right: 0;
-      z-index: 750;
+      z-index: 1000;
       font-family:
         -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     }
@@ -87,6 +87,7 @@ export class PlaceDetailModal extends LitElement {
       box-shadow: var(--shadow-popover, 0 22px 70px rgba(15, 23, 42, 0.16));
       padding: 20px;
       max-height: 85vh;
+      max-height: 85dvh;
       overflow-y: auto;
       animation: slideUp 0.25s ease-out;
     }
@@ -520,6 +521,7 @@ export class PlaceDetailModal extends LitElement {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
+      z-index: 1;
     }
 
     .action-row .link-btn:only-child {
