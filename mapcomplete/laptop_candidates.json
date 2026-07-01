@@ -1,0 +1,108 @@
+{
+  "id": "laptop_friendly_places_candidates",
+  "name": {
+    "en": "Cafés, bars & co-working spaces (not yet tagged)"
+  },
+  "description": {
+    "en": "Cafés, bars, pubs, fast food places, food courts, libraries, coworking spaces, community centres and bakeries that have not yet been tagged with laptop=*. Answer the question below to add them to the Laptop friendly places map."
+  },
+  "credits": "a1ca424",
+  "credits:uid": 1914637,
+  "minzoom": 16,
+  "source": {
+    "osmTags": {
+      "and": [
+        {
+          "or": [
+            "amenity=cafe",
+            "amenity=bar",
+            "amenity=pub",
+            "amenity=fast_food",
+            "amenity=food_court",
+            "amenity=library",
+            "amenity=coworking_space",
+            "amenity=community_centre",
+            "shop=bakery",
+            "office=coworking"
+          ]
+        },
+        "laptop!=yes",
+        "laptop!=no",
+        "laptop!=restricted"
+      ]
+    }
+  },
+  "title": {
+    "render": "{name}"
+  },
+  "pointRendering": [
+    {
+      "location": ["point", "centroid"],
+      "marker": [
+        {
+          "icon": "circle",
+          "color": "#94a3b8"
+        }
+      ]
+    }
+  ],
+  "lineRendering": [
+    {
+      "width": 1,
+      "color": "#94a3b8"
+    }
+  ],
+  "tagRenderings": [
+    {
+      "id": "laptop",
+      "question": { "en": "Is working on a laptop welcome here?" },
+      "questionHint": {
+        "en": "This is the only question that matters to get this place onto the laptop-friendly map. See <a href=\"https://taginfo.openstreetmap.org/keys/laptop\" target=\"_blank\">taginfo: laptop</a> for how this tag is used"
+      },
+      "mappings": [
+        { "if": "laptop=yes", "then": { "en": "Working on a laptop is welcome here" } },
+        { "if": "laptop=no", "then": { "en": "Working on a laptop is <b>not</b> allowed here" } },
+        {
+          "if": "laptop=restricted",
+          "then": { "en": "Working on a laptop is allowed, but with some restrictions" }
+        }
+      ]
+    },
+    {
+      "id": "laptop-conditional",
+      "condition": "laptop=restricted",
+      "question": { "en": "What are the restrictions on using a laptop here?" },
+      "questionHint": {
+        "en": "Example: <i>no @ (12:00-14:00)</i> for \"not allowed during lunch hours\". See <a href=\"https://wiki.openstreetmap.org/wiki/Conditional_restrictions\" target=\"_blank\">Conditional restrictions</a> on the OSM wiki"
+      },
+      "render": { "en": "Restrictions: {laptop:conditional}" },
+      "freeform": { "key": "laptop:conditional", "type": "string" }
+    },
+    {
+      "id": "internet-access",
+      "question": { "en": "Does this place offer internet access?" },
+      "questionHint": {
+        "en": "Helps decide whether this is laptop-friendly. See <a href=\"https://wiki.openstreetmap.org/wiki/Key:internet_access\" target=\"_blank\">Key:internet_access</a> on the OSM wiki"
+      },
+      "mappings": [
+        { "if": "internet_access=yes", "then": { "en": "Internet access is available" } },
+        { "if": "internet_access=wlan", "then": { "en": "Wireless internet access (WiFi) is available" } },
+        { "if": "internet_access=wired", "then": { "en": "Wired internet access is available" } },
+        { "if": "internet_access=terminal", "then": { "en": "Internet access is available via a terminal" } },
+        { "if": "internet_access=no", "then": { "en": "No internet access is available" } }
+      ]
+    },
+    {
+      "id": "sockets",
+      "question": { "en": "Are power sockets available to charge devices?" },
+      "questionHint": {
+        "en": "Example: plug sockets near tables or the bar. See <a href=\"https://wiki.openstreetmap.org/wiki/Key:power_supply\" target=\"_blank\">Key:power_supply</a> on the OSM wiki"
+      },
+      "mappings": [
+        { "if": "sockets=yes", "then": { "en": "Power sockets are available" } },
+        { "if": "sockets=many", "then": { "en": "Plenty of power sockets are available" } },
+        { "if": "sockets=no", "then": { "en": "No power sockets are available" } }
+      ]
+    }
+  ]
+}

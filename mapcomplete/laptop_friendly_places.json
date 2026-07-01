@@ -1,0 +1,336 @@
+{
+  "id": "laptop_friendly_places",
+  "name": {
+    "en": "Laptop friendly places"
+  },
+  "description": {
+    "en": "Cafés, libraries, coworking spaces and other places that are tagged as friendly (or unfriendly) towards people working on a laptop."
+  },
+  "credits": "a1ca424",
+  "credits:uid": 1914637,
+  "minzoom": 15,
+  "source": {
+    "osmTags": {
+      "or": [
+        "laptop=yes",
+        "laptop=no",
+        "laptop=restricted"
+      ]
+    }
+  },
+  "title": {
+    "render": "{name}"
+  },
+  "pointRendering": [
+    {
+      "location": [
+        "point",
+        "centroid"
+      ],
+      "marker": [
+        {
+          "icon": "circle",
+          "color": {
+            "render": "#f59e0b",
+            "mappings": [
+              { "if": "laptop=yes", "then": "#22c55e" },
+              { "if": "laptop=no", "then": "#ef4444" },
+              { "if": "laptop=restricted", "then": "#f59e0b" }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "lineRendering": [
+    {
+      "width": 1,
+      "color": {
+        "render": "#f59e0b",
+        "mappings": [
+          { "if": "laptop=yes", "then": "#22c55e" },
+          { "if": "laptop=no", "then": "#ef4444" },
+          { "if": "laptop=restricted", "then": "#f59e0b" }
+        ]
+      }
+    }
+  ],
+  "presets": [
+    {
+      "title": { "en": "a laptop-friendly café" },
+      "tags": ["amenity=cafe", "laptop=yes"]
+    },
+    {
+      "title": { "en": "a laptop-friendly bar" },
+      "tags": ["amenity=bar", "laptop=yes"]
+    },
+    {
+      "title": { "en": "a coworking space" },
+      "tags": ["amenity=coworking_space", "laptop=yes"]
+    },
+    {
+      "title": { "en": "a library" },
+      "tags": ["amenity=library", "laptop=yes"]
+    }
+  ],
+  "tagRenderings": [
+    {
+      "id": "laptop",
+      "question": { "en": "Is working on a laptop welcome here?" },
+      "questionHint": {
+        "en": "See <a href=\"https://taginfo.openstreetmap.org/keys/laptop\" target=\"_blank\">taginfo: laptop</a> for how this tag is used"
+      },
+      "mappings": [
+        { "if": "laptop=yes", "then": { "en": "Working on a laptop is welcome here" } },
+        { "if": "laptop=no", "then": { "en": "Working on a laptop is <b>not</b> allowed here" } },
+        {
+          "if": "laptop=restricted",
+          "then": { "en": "Working on a laptop is allowed, but with some restrictions" }
+        }
+      ]
+    },
+    {
+      "id": "laptop-conditional",
+      "condition": "laptop=restricted",
+      "question": { "en": "What are the restrictions on using a laptop here?" },
+      "questionHint": {
+        "en": "Example: <i>no @ (12:00-14:00)</i> for \"not allowed during lunch hours\". See <a href=\"https://wiki.openstreetmap.org/wiki/Conditional_restrictions\" target=\"_blank\">Conditional restrictions</a> on the OSM wiki"
+      },
+      "render": { "en": "Restrictions: {laptop:conditional}" },
+      "freeform": { "key": "laptop:conditional", "type": "string" }
+    },
+    {
+      "id": "internet-access",
+      "question": { "en": "Does this place offer internet access?" },
+      "questionHint": {
+        "en": "See <a href=\"https://wiki.openstreetmap.org/wiki/Key:internet_access\" target=\"_blank\">Key:internet_access</a> on the OSM wiki"
+      },
+      "mappings": [
+        { "if": "internet_access=yes", "then": { "en": "Internet access is available" } },
+        { "if": "internet_access=wlan", "then": { "en": "Wireless internet access (WiFi) is available" } },
+        { "if": "internet_access=wired", "then": { "en": "Wired internet access is available" } },
+        { "if": "internet_access=terminal", "then": { "en": "Internet access is available via a terminal" } },
+        { "if": "internet_access=no", "then": { "en": "No internet access is available" } }
+      ]
+    },
+    {
+      "id": "wifi-ssid",
+      "condition": { "or": ["internet_access=yes", "internet_access=wlan"] },
+      "question": { "en": "What is the WiFi network name (SSID) at this place?" },
+      "questionHint": {
+        "en": "Example: <i>Starbucks WiFi</i>. See <a href=\"https://wiki.openstreetmap.org/wiki/Key:internet_access:ssid\" target=\"_blank\">Key:internet_access:ssid</a> on the OSM wiki"
+      },
+      "render": { "en": "The WiFi network is named <b>{internet_access:ssid}</b>" },
+      "freeform": { "key": "internet_access:ssid", "type": "string" }
+    },
+    {
+      "id": "wifi-fee",
+      "condition": { "or": ["internet_access=yes", "internet_access=wlan"] },
+      "question": { "en": "Is the WiFi free, paid, or only for customers?" },
+      "questionHint": {
+        "en": "See <a href=\"https://wiki.openstreetmap.org/wiki/Tag:internet_access=wlan\" target=\"_blank\">internet_access=wlan</a> on the OSM wiki"
+      },
+      "mappings": [
+        { "if": "internet_access:fee=no", "then": { "en": "The WiFi is free to use" } },
+        { "if": "internet_access:fee=yes", "then": { "en": "The WiFi requires payment" } },
+        { "if": "internet_access:fee=customers", "then": { "en": "The WiFi is free, but only for customers" } }
+      ]
+    },
+    {
+      "id": "wifi-password",
+      "condition": { "or": ["internet_access=yes", "internet_access=wlan"] },
+      "question": { "en": "Is a password required to use the WiFi?" },
+      "questionHint": {
+        "en": "We only record whether a password is needed, never the password itself. See <a href=\"https://wiki.openstreetmap.org/wiki/Key:internet_access:password\" target=\"_blank\">Key:internet_access:password</a> on the OSM wiki"
+      },
+      "mappings": [
+        { "if": "internet_access:password=yes", "then": { "en": "A password is required" } },
+        { "if": "internet_access:password=no", "then": { "en": "No password is required" } }
+      ]
+    },
+    {
+      "id": "sockets",
+      "question": { "en": "Are power sockets available to charge devices?" },
+      "questionHint": {
+        "en": "Example: plug sockets near tables or the bar. See <a href=\"https://wiki.openstreetmap.org/wiki/Key:power_supply\" target=\"_blank\">Key:power_supply</a> on the OSM wiki"
+      },
+      "mappings": [
+        { "if": "sockets=yes", "then": { "en": "Power sockets are available" } },
+        { "if": "sockets=many", "then": { "en": "Plenty of power sockets are available" } },
+        { "if": "sockets=no", "then": { "en": "No power sockets are available" } }
+      ]
+    },
+    "opening_hours",
+    "wheelchair-access",
+    {
+      "id": "air-conditioning",
+      "question": { "en": "Does this place have air conditioning?" },
+      "questionHint": {
+        "en": "See <a href=\"https://wiki.openstreetmap.org/wiki/Key:air_conditioning\" target=\"_blank\">Key:air_conditioning</a> on the OSM wiki"
+      },
+      "mappings": [
+        { "if": "air_conditioning=yes", "then": { "en": "Air conditioning is available" } },
+        { "if": "air_conditioning=no", "then": { "en": "No air conditioning" } }
+      ]
+    },
+    {
+      "id": "indoor-seating",
+      "question": { "en": "Does this place have indoor seating?" },
+      "questionHint": {
+        "en": "See <a href=\"https://wiki.openstreetmap.org/wiki/Key:indoor_seating\" target=\"_blank\">Key:indoor_seating</a> on the OSM wiki"
+      },
+      "mappings": [
+        { "if": "indoor_seating=yes", "then": { "en": "There is indoor seating" } },
+        { "if": "indoor_seating=no", "then": { "en": "There is no indoor seating" } }
+      ]
+    },
+    {
+      "id": "outdoor-seating",
+      "question": { "en": "Does this place have outdoor seating?" },
+      "questionHint": {
+        "en": "See <a href=\"https://wiki.openstreetmap.org/wiki/Key:outdoor_seating\" target=\"_blank\">Key:outdoor_seating</a> on the OSM wiki"
+      },
+      "mappings": [
+        { "if": "outdoor_seating=yes", "then": { "en": "There is outdoor seating" } },
+        { "if": "outdoor_seating=no", "then": { "en": "There is no outdoor seating" } }
+      ]
+    },
+    {
+      "id": "smoking",
+      "question": { "en": "Is smoking allowed at this place?" },
+      "questionHint": {
+        "en": "See <a href=\"https://wiki.openstreetmap.org/wiki/Key:smoking\" target=\"_blank\">Key:smoking</a> on the OSM wiki"
+      },
+      "mappings": [
+        { "if": "smoking=yes", "then": { "en": "Smoking is allowed" } },
+        { "if": "smoking=no", "then": { "en": "Smoking is not allowed" } },
+        { "if": "smoking=outside", "then": { "en": "Smoking is only allowed outside" } },
+        { "if": "smoking=separated", "then": { "en": "Smoking is only allowed in a separated area" } }
+      ]
+    },
+    {
+      "id": "level",
+      "question": { "en": "On what floor is this place located?" },
+      "questionHint": {
+        "en": "Example: <i>0</i> for ground floor, <i>1</i> for first floor, <i>-1</i> for basement. See <a href=\"https://wiki.openstreetmap.org/wiki/Key:level\" target=\"_blank\">Key:level</a> on the OSM wiki"
+      },
+      "render": { "en": "Located on floor {level}" },
+      "freeform": { "key": "level", "type": "float" }
+    },
+    "phone",
+    "website",
+    {
+      "id": "fee",
+      "question": { "en": "Is there a fee to use or enter this place?" },
+      "questionHint": {
+        "en": "Example: a coworking space charging for a day pass. See <a href=\"https://wiki.openstreetmap.org/wiki/Key:fee\" target=\"_blank\">Key:fee</a> on the OSM wiki"
+      },
+      "mappings": [
+        { "if": "fee=yes", "then": { "en": "There is a fee to use or enter this place" } },
+        { "if": "fee=no", "then": { "en": "It is free to use or enter this place" } }
+      ]
+    },
+    {
+      "id": "charge",
+      "condition": "fee=yes",
+      "question": { "en": "How much does it cost?" },
+      "questionHint": {
+        "en": "Example: <i>5 EUR/day</i>. See <a href=\"https://wiki.openstreetmap.org/wiki/Key:charge\" target=\"_blank\">Key:charge</a> on the OSM wiki"
+      },
+      "render": { "en": "Costs <b>{charge}</b>" },
+      "freeform": { "key": "charge", "type": "string" }
+    },
+    {
+      "id": "reservation",
+      "question": { "en": "Does one need to book ahead of time?" },
+      "questionHint": {
+        "en": "See <a href=\"https://wiki.openstreetmap.org/wiki/Key:reservation\" target=\"_blank\">Key:reservation</a> on the OSM wiki"
+      },
+      "mappings": [
+        { "if": "reservation=yes", "then": { "en": "Booking ahead is required" } },
+        { "if": "reservation=recommended", "then": { "en": "Booking ahead is recommended" } },
+        { "if": "reservation=no", "then": { "en": "Booking ahead is not necessary" } }
+      ]
+    },
+    {
+      "id": "capacity",
+      "question": { "en": "How many people/seats/desks fit here?" },
+      "questionHint": {
+        "en": "Example: <i>20</i>. See <a href=\"https://wiki.openstreetmap.org/wiki/Key:capacity\" target=\"_blank\">Key:capacity</a> on the OSM wiki"
+      },
+      "render": { "en": "Room for {capacity} people" },
+      "freeform": { "key": "capacity", "type": "pnat" }
+    },
+    {
+      "id": "brand",
+      "question": { "en": "What chain or brand does this place belong to?" },
+      "questionHint": {
+        "en": "Example: <i>Starbucks</i>. Leave blank for independent places. See <a href=\"https://wiki.openstreetmap.org/wiki/Key:brand\" target=\"_blank\">Key:brand</a> on the OSM wiki"
+      },
+      "render": { "en": "Part of <b>{brand}</b>" },
+      "freeform": { "key": "brand", "type": "string" }
+    },
+    {
+      "id": "drinking-water",
+      "question": { "en": "Is free drinking water available here?" },
+      "questionHint": {
+        "en": "See <a href=\"https://wiki.openstreetmap.org/wiki/Key:drinking_water\" target=\"_blank\">Key:drinking_water</a> on the OSM wiki"
+      },
+      "mappings": [
+        { "if": "drinking_water=yes", "then": { "en": "Free drinking water is available" } },
+        { "if": "drinking_water=no", "then": { "en": "No free drinking water is available" } }
+      ]
+    },
+    {
+      "id": "toilets",
+      "question": { "en": "Are there toilets at this place?" },
+      "questionHint": {
+        "en": "See <a href=\"https://wiki.openstreetmap.org/wiki/Key:toilets\" target=\"_blank\">Key:toilets</a> on the OSM wiki"
+      },
+      "mappings": [
+        { "if": "toilets=yes", "then": { "en": "There are toilets" } },
+        { "if": "toilets=no", "then": { "en": "There are no toilets" } }
+      ]
+    },
+    {
+      "id": "toilets-wheelchair",
+      "condition": "toilets=yes",
+      "question": { "en": "Is there a wheelchair-accessible toilet?" },
+      "questionHint": {
+        "en": "See <a href=\"https://wiki.openstreetmap.org/wiki/Key:toilets:wheelchair\" target=\"_blank\">Key:toilets:wheelchair</a> on the OSM wiki"
+      },
+      "mappings": [
+        { "if": "toilets:wheelchair=yes", "then": { "en": "There is a wheelchair-accessible toilet" } },
+        { "if": "toilets:wheelchair=no", "then": { "en": "There is no wheelchair-accessible toilet" } }
+      ]
+    },
+    "dog-access",
+    {
+      "id": "addr-street",
+      "question": { "en": "What street is this place on?" },
+      "questionHint": {
+        "en": "See <a href=\"https://wiki.openstreetmap.org/wiki/Key:addr:street\" target=\"_blank\">Key:addr:street</a> on the OSM wiki"
+      },
+      "render": { "en": "Located on {addr:street}" },
+      "freeform": { "key": "addr:street", "type": "string" }
+    },
+    {
+      "id": "addr-housenumber",
+      "question": { "en": "What is the house number of this place?" },
+      "questionHint": {
+        "en": "See <a href=\"https://wiki.openstreetmap.org/wiki/Key:addr:housenumber\" target=\"_blank\">Key:addr:housenumber</a> on the OSM wiki"
+      },
+      "render": { "en": "House number {addr:housenumber}" },
+      "freeform": { "key": "addr:housenumber", "type": "string" }
+    },
+    {
+      "id": "addr-city",
+      "question": { "en": "In what city is this place located?" },
+      "questionHint": {
+        "en": "Powers the city filter on our List page. See <a href=\"https://wiki.openstreetmap.org/wiki/Key:addr:city\" target=\"_blank\">Key:addr:city</a> on the OSM wiki"
+      },
+      "render": { "en": "Located in {addr:city}" },
+      "freeform": { "key": "addr:city", "type": "string" }
+    }
+  ]
+}

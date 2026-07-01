@@ -1,0 +1,15 @@
+node_modules
+backend/dist
+frontend/dist
+backend/data
+pbf
+.git
+.reference
+mapcomplete
+# Keep e2e/package.json: npm workspaces share one root package-lock.json, so
+# `npm ci` needs every workspace's package.json present to resolve it, even
+# though the rest of e2e (tests, Playwright) is irrelevant to the image.
+e2e/*
+!e2e/package.json
+*.sqlite
+*.sqlite3
