@@ -7,6 +7,7 @@ import './components/menu-nav.js';
 import './components/place-detail-modal.js';
 import './pages/list-page.js';
 import './pages/contribute-page.js';
+import './pages/faq-page.js';
 import './pages/about-page.js';
 import type { Place, BBox, PlaceCandidate } from './types.js';
 import {
@@ -122,6 +123,7 @@ export class RemoteWorkApp extends LitElement {
           ? html`<list-page @place-selected=${this.handlePlaceSelect}></list-page>`
           : ''}
         ${this.currentPage === 'contribute' ? html`<contribute-page></contribute-page>` : ''}
+        ${this.currentPage === 'faq' ? html`<faq-page></faq-page>` : ''}
         ${this.currentPage === 'about' ? html`<about-page></about-page>` : ''}
         ${this.selectedPlace
           ? html`
