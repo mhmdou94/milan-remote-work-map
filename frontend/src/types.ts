@@ -76,6 +76,12 @@ export interface PlaceCandidate {
   osmTags?: Record<string, string>;
 }
 
+export interface PlaceCluster {
+  latitude: number;
+  longitude: number;
+  count: number;
+}
+
 export type InternetAccess = 'yes' | 'no' | 'wired' | 'wlan';
 
 export interface WorkerRunRegion {

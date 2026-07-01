@@ -1,8 +1,22 @@
 import { Request, Response } from 'express';
 import { Knex } from 'knex';
-import { getDistinctCities, getPlaces } from '../db/queries.js';
-import { GeoJSONCollection, GeoJSONFeature, Place } from '../types.js';
+import { getDistinctCities, getPlaces, getPlaceClusters } from '../db/queries.js';
+import {
+  ClusterGeoJSONFeature,
+  GeoJSONCollection,
+  GeoJSONFeature,
+  Place,
+  PlaceCluster,
+} from '../types.js';
 import { parseBboxParam } from './bbox.js';
+
+// Switch to clustering when the viewport spans more than this many degrees of latitude.
+// ~25 km at mid-latitude (25 / 111 ≈ 0.225°)
+const CLUSTER_THRESHOLD_DEG = 0.225;
+
+function clusterCellSize(latSpan: number): number {
+  return Math.max(0.05, Math.round((latSpan / 10) * 100) / 100);
+}
 
 export function createPlacesRoute(db: Knex) {
   return async (req: Request, res: Response) => {
@@ -18,6 +32,18 @@ export function createPlacesRoute(db: Knex) {
 
       if (!bbox && !city) {
         return res.status(400).json({ error: 'bbox or city query parameter required' });
+      }
+
+      // Large viewport — return grid clusters instead of individual places.
+      if (bbox && bbox.maxLat - bbox.minLat > CLUSTER_THRESHOLD_DEG) {
+        const cellSize = clusterCellSize(bbox.maxLat - bbox.minLat);
+        const clusters = await getPlaceClusters(db, bbox, cellSize);
+        const geojson: GeoJSONCollection = {
+          type: 'FeatureCollection',
+          features: clusters.map(clusterToGeoJSON),
+        };
+        res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
+        return res.json(geojson);
       }
 
       const filters = {
@@ -71,5 +97,13 @@ function placeToGeoJSON(place: Place): GeoJSONFeature {
       coordinates: [longitude, latitude], // GeoJSON uses [lon, lat]
     },
     properties: properties as any,
+  };
+}
+
+function clusterToGeoJSON(cluster: PlaceCluster): ClusterGeoJSONFeature {
+  return {
+    type: 'Feature',
+    geometry: { type: 'Point', coordinates: [cluster.longitude, cluster.latitude] },
+    properties: { type: 'cluster', count: cluster.count },
   };
 }

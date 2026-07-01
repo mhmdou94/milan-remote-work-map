@@ -2,6 +2,7 @@ import { Knex } from 'knex';
 import {
   Place,
   BBox,
+  PlaceCluster,
   StagedPlace,
   TransitStop,
   TransitStopWithDistance,
@@ -755,4 +756,51 @@ export async function softDeleteMissingOsmPlaces(
   }
 
   return toDelete.map((p) => p.id);
+}
+
+export async function getPlaceClusters(
+  db: Knex,
+  bbox: BBox,
+  cellSize: number
+): Promise<PlaceCluster[]> {
+  const rows = await db('places')
+    .whereNull('deleted_at')
+    .whereBetween('latitude', [bbox.minLat, bbox.maxLat])
+    .andWhereBetween('longitude', [bbox.minLon, bbox.maxLon])
+    .select(
+      db.raw('AVG(latitude) as center_lat'),
+      db.raw('AVG(longitude) as center_lon'),
+      db.raw('COUNT(*) as count')
+    )
+    .groupByRaw('CAST(latitude / ? AS INTEGER)', [cellSize])
+    .groupByRaw('CAST(longitude / ? AS INTEGER)', [cellSize]);
+
+  return rows.map((r: any) => ({
+    latitude: Number(r.center_lat),
+    longitude: Number(r.center_lon),
+    count: Number(r.count),
+  }));
+}
+
+export async function getCandidateClusters(
+  db: Knex,
+  bbox: BBox,
+  cellSize: number
+): Promise<PlaceCluster[]> {
+  const rows = await db('place_candidates')
+    .whereBetween('latitude', [bbox.minLat, bbox.maxLat])
+    .andWhereBetween('longitude', [bbox.minLon, bbox.maxLon])
+    .select(
+      db.raw('AVG(latitude) as center_lat'),
+      db.raw('AVG(longitude) as center_lon'),
+      db.raw('COUNT(*) as count')
+    )
+    .groupByRaw('CAST(latitude / ? AS INTEGER)', [cellSize])
+    .groupByRaw('CAST(longitude / ? AS INTEGER)', [cellSize]);
+
+  return rows.map((r: any) => ({
+    latitude: Number(r.center_lat),
+    longitude: Number(r.center_lon),
+    count: Number(r.count),
+  }));
 }

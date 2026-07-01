@@ -1,7 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import L, { map as createMap, tileLayer } from 'leaflet';
 import 'leaflet.markercluster';
-import type { Place, PlaceCandidate } from '../types';
+import type { Place, PlaceCandidate, PlaceCluster } from '../types';
 import { getCategoryInfo } from '../categories';
 import { candidateToPlace } from '../lib/place.js';
 
@@ -104,6 +104,26 @@ export class MapComponent extends LitElement {
       border-style: dashed;
       background: rgba(255, 255, 255, 0.75);
       box-shadow: none;
+    }
+
+    .cluster-bubble {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: white;
+      background: var(--color-primary, #1d4ed8);
+      border: 3px solid white;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
+      cursor: pointer;
+    }
+
+    .cluster-bubble.candidate {
+      background: #d97706;
     }
 
     .emoji-marker.not-allowed {
@@ -230,7 +250,9 @@ export class MapComponent extends LitElement {
 
   static properties = {
     places: { type: Array },
+    clusters: { type: Array },
     candidates: { type: Array },
+    candidateClusters: { type: Array },
     selectedPlace: { type: Object },
     loading: { type: Boolean },
     loaded: { type: Boolean },
@@ -241,7 +263,9 @@ export class MapComponent extends LitElement {
   };
 
   declare places: Place[];
+  declare clusters: PlaceCluster[];
   declare candidates: PlaceCandidate[];
+  declare candidateClusters: PlaceCluster[];
   declare selectedPlace: Place | null;
   declare loading: boolean;
   declare loaded: boolean;
@@ -253,6 +277,8 @@ export class MapComponent extends LitElement {
   userLocation: { lat: number; lon: number } | null;
   markerCluster: any;
   candidateLayer: L.LayerGroup | null;
+  clusterLayer: L.LayerGroup | null;
+  candidateClusterLayer: L.LayerGroup | null;
   userLocationMarker: L.CircleMarker | null;
   private resizeObserver: ResizeObserver | null = null;
   private markers: Map<string, L.Marker> = new Map();
@@ -260,7 +286,9 @@ export class MapComponent extends LitElement {
   constructor() {
     super();
     this.places = [];
+    this.clusters = [];
     this.candidates = [];
+    this.candidateClusters = [];
     this.selectedPlace = null;
     this.loading = false;
     this.loaded = false;
@@ -272,6 +300,8 @@ export class MapComponent extends LitElement {
     this.userLocation = null;
     this.markerCluster = null;
     this.candidateLayer = null;
+    this.clusterLayer = null;
+    this.candidateClusterLayer = null;
     this.userLocationMarker = null;
   }
 
@@ -335,13 +365,24 @@ export class MapComponent extends LitElement {
     if (changedProperties.has('places')) {
       this.renderMarkers();
     }
+    if (changedProperties.has('clusters')) {
+      this.renderClusterMarkers();
+    }
     if (changedProperties.has('candidates')) {
       this.renderCandidateMarkers();
+    }
+    if (changedProperties.has('candidateClusters')) {
+      this.renderCandidateClusterMarkers();
     }
     if (changedProperties.has('selectedPlace')) {
       this.highlightSelectedPlace();
     }
-    if (changedProperties.has('places') || changedProperties.has('candidates')) {
+    if (
+      changedProperties.has('places') ||
+      changedProperties.has('clusters') ||
+      changedProperties.has('candidates') ||
+      changedProperties.has('candidateClusters')
+    ) {
       this.updateEmptyState();
     }
   }
@@ -375,6 +416,12 @@ export class MapComponent extends LitElement {
       this.candidateLayer = L.layerGroup();
       this.map.addLayer(this.candidateLayer);
 
+      this.clusterLayer = L.layerGroup();
+      this.map.addLayer(this.clusterLayer);
+
+      this.candidateClusterLayer = L.layerGroup();
+      this.map.addLayer(this.candidateClusterLayer);
+
       this.map.on('moveend', () => {
         this.updateEmptyState();
         this.dispatchEvent(new CustomEvent('map-moved', { detail: this.getCurrentBbox() }));
@@ -393,7 +440,9 @@ export class MapComponent extends LitElement {
       // would have bailed out with nothing to render into, and `places`
       // won't change again to retrigger it. Render now that we're ready.
       this.renderMarkers();
+      this.renderClusterMarkers();
       this.renderCandidateMarkers();
+      this.renderCandidateClusterMarkers();
       this.updateEmptyState();
       this.dispatchEvent(new CustomEvent('map-ready', { detail: this.getCurrentBbox() }));
     } catch (error) {
@@ -420,7 +469,10 @@ export class MapComponent extends LitElement {
     }
 
     const bounds = this.map.getBounds();
-    const hasPlaceInView = this.places.some((p) => bounds.contains([p.latitude, p.longitude]));
+    const hasPlaceInView =
+      this.places.some((p) => bounds.contains([p.latitude, p.longitude])) ||
+      this.clusters.length > 0 ||
+      this.candidateClusters.length > 0;
     const hasCandidateInView = this.candidates.some((c) =>
       bounds.contains([c.latitude, c.longitude])
     );
@@ -482,6 +534,46 @@ export class MapComponent extends LitElement {
       });
 
       this.candidateLayer.addLayer(marker);
+    }
+  }
+
+  private renderClusterMarkers() {
+    if (!this.map || !this.clusterLayer) return;
+    this.clusterLayer.clearLayers();
+
+    for (const cluster of this.clusters) {
+      const marker = L.marker([cluster.latitude, cluster.longitude], {
+        icon: L.divIcon({
+          html: `<div class="cluster-bubble">${cluster.count}</div>`,
+          className: '',
+          iconSize: [48, 48],
+          iconAnchor: [24, 24],
+        }),
+      });
+      marker.on('click', () => {
+        this.map!.setView([cluster.latitude, cluster.longitude], this.map!.getZoom() + 3);
+      });
+      this.clusterLayer.addLayer(marker);
+    }
+  }
+
+  private renderCandidateClusterMarkers() {
+    if (!this.map || !this.candidateClusterLayer) return;
+    this.candidateClusterLayer.clearLayers();
+
+    for (const cluster of this.candidateClusters) {
+      const marker = L.marker([cluster.latitude, cluster.longitude], {
+        icon: L.divIcon({
+          html: `<div class="cluster-bubble candidate">${cluster.count}</div>`,
+          className: '',
+          iconSize: [48, 48],
+          iconAnchor: [24, 24],
+        }),
+      });
+      marker.on('click', () => {
+        this.map!.setView([cluster.latitude, cluster.longitude], this.map!.getZoom() + 3);
+      });
+      this.candidateClusterLayer.addLayer(marker);
     }
   }
 
