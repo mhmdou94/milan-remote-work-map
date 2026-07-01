@@ -6,6 +6,7 @@ const PORT = process.env.WEBHOOK_PORT || 9090;
 const TOKEN = process.env.DEPLOY_WEBHOOK_TOKEN;
 const COMPOSE_FILE = process.env.COMPOSE_FILE || '/workspace/docker-compose.yml';
 const COMPOSE_SERVICE = process.env.COMPOSE_SERVICE || 'app';
+const DEPLOY_COOLDOWN_MS = (Number(process.env.DEPLOY_COOLDOWN_MINUTES) || 5) * 60 * 1000;
 
 if (!TOKEN) {
   console.error('DEPLOY_WEBHOOK_TOKEN is not set, refusing to start');
@@ -38,6 +39,8 @@ async function deploy() {
   return `${pullOut}\n${upOut}`;
 }
 
+let lastDeployAt = null;
+
 const server = createServer(async (req, res) => {
   const now = new Date().toISOString();
 
@@ -52,6 +55,19 @@ const server = createServer(async (req, res) => {
     return;
   }
 
+  if (lastDeployAt !== null) {
+    const elapsed = Date.now() - lastDeployAt;
+    if (elapsed < DEPLOY_COOLDOWN_MS) {
+      const retryAfter = Math.ceil((DEPLOY_COOLDOWN_MS - elapsed) / 1000);
+      console.log(`${now} deploy rejected: cooldown active, retry in ${retryAfter}s`);
+      res
+        .writeHead(429, { 'Content-Type': 'text/plain', 'Retry-After': String(retryAfter) })
+        .end(`deploy rejected: cooldown active, retry in ${retryAfter}s\n`);
+      return;
+    }
+  }
+
+  lastDeployAt = Date.now();
   console.log(`${now} deploy triggered`);
   try {
     const output = await deploy();

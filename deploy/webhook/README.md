@@ -12,6 +12,7 @@ CI (`.github/workflows/docker-build.yml`) calls this over a Cloudflare Tunnel ho
 | `WEBHOOK_PORT`          | `9090`                          | Port the server listens on inside the container.             |
 | `COMPOSE_FILE`          | `/workspace/docker-compose.yml` | Path *inside this container* to the compose file to operate on. |
 | `COMPOSE_SERVICE`       | `app`                           | The compose service to pull + recreate.                      |
+| `DEPLOY_COOLDOWN_MINUTES` | `5`                           | Minimum minutes between deploys. Requests within the window get a `429` with a `Retry-After` header. |
 
 ## Usage
 
@@ -37,10 +38,13 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./docker-compose.yml:/workspace/docker-compose.yml:ro
+      - ~/.docker/config.json:/root/.docker/config.json:ro  # host registry credentials
 
 volumes:
   app-data:
 ```
+
+The `~/.docker/config.json` mount is required for private registries (e.g. ghcr.io). The webhook container's Docker CLI runs inside the container and looks for credentials at `/root/.docker/config.json` — it can't see the credentials you stored on the host with `docker login` unless they're explicitly mounted in.
 
 Then expose `deploy-webhook`'s port through your Cloudflare Tunnel ingress (e.g. an internal hostname routed to `http://localhost:9090`), and set the app repo's `DEPLOY_WEBHOOK_URL` / `DEPLOY_WEBHOOK_TOKEN` GitHub Actions secrets to that hostname + the same token.
 

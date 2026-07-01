@@ -1,6 +1,7 @@
 ## Development workflow
 
 - Before pushing make sure that `lint`, `format` and `e2e` scripts have passed correctly.
+- Use the commands in the root package.json since they are very likely already approved.
 
 
 ## Testing
