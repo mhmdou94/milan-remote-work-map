@@ -61,6 +61,30 @@ test.describe('Map page', () => {
     expect(names).toContain('Biblioteca Ambrosiana');
   });
 
+  test('discovery panel highlights best work spots and quick filters', async ({ page }) => {
+    const initialResponse = page.waitForResponse((res) => res.url().includes('/api/places'));
+    await page.goto('/');
+    await initialResponse;
+
+    const panel = page.locator('remote-work-app .discovery-panel');
+    await expect(panel).toBeVisible();
+    await expect(panel).toContainText('Find your next work spot.');
+    await expect(panel.locator('.spot-card').first()).toContainText('Work fit');
+
+    await panel.locator('input[type="search"]').fill('coworking');
+    await expect(panel.locator('.spot-card')).toHaveCount(1);
+    await expect(panel.locator('.spot-card')).toContainText('Coworking Space Milano');
+
+    const filteredResponse = page.waitForResponse(
+      (res) => res.url().includes('/api/places') && res.url().includes('sockets=yes')
+    );
+    await panel.locator('.quick-chip', { hasText: 'Power' }).click();
+    await filteredResponse;
+
+    const filterButton = page.locator('filter-popover .filter-btn');
+    await expect(filterButton).toContainText('1');
+  });
+
   test('mobile controls stay usable above map chrome', async ({ page, context }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await context.grantPermissions(['geolocation']);

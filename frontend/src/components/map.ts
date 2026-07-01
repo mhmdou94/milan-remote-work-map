@@ -4,6 +4,7 @@ import 'leaflet.markercluster';
 import type { Place, PlaceCandidate, PlaceCluster } from '../types';
 import { getCategoryInfo } from '../categories';
 import { candidateToPlace } from '../lib/place.js';
+import { getWorkFit } from '../lib/work-fit.js';
 
 // CSS links that must be loaded INSIDE shadow DOM
 const LEAFLET_CSS = html`
@@ -231,18 +232,36 @@ export class MapComponent extends LitElement {
 
     @media (max-width: 920px) {
       .leaflet-top.leaflet-left {
-        top: 70px;
+        top: 92px;
         left: 10px;
       }
 
+      .map-message,
+      .empty-state {
+        top: 68px;
+        right: 12px;
+        left: auto;
+        transform: none;
+        max-width: min(210px, calc(100vw - 132px));
+        padding: 7px 10px;
+        border-radius: 18px;
+        font-size: 11px;
+        line-height: 1.25;
+      }
+
       .locate-btn {
-        bottom: calc(96px + env(safe-area-inset-bottom));
+        top: auto;
+        bottom: calc(170px + env(safe-area-inset-bottom));
         left: 12px;
+        z-index: 760;
+        padding: 8px 12px;
       }
 
       .location-message {
-        bottom: calc(148px + env(safe-area-inset-bottom));
+        top: auto;
+        bottom: calc(220px + env(safe-area-inset-bottom));
         left: 12px;
+        z-index: 760;
         max-width: min(320px, calc(100vw - 24px));
       }
     }
@@ -604,11 +623,32 @@ export class MapComponent extends LitElement {
 
   private createPopupContent(place: Place): string {
     const { label, color } = getCategoryInfo(place.category);
+    const fit = getWorkFit(place);
+    const badges = fit.badges
+      .slice(0, 3)
+      .map((badge) => {
+        const colors =
+          badge.tone === 'good'
+            ? 'background:#effbf6;color:#006b55;'
+            : badge.tone === 'warn'
+              ? 'background:#fff7e8;color:#9a5b00;'
+              : 'background:#f0ebe2;color:#5d6a63;';
+        return `<span style="display:inline-flex;align-items:center;min-height:22px;padding:3px 7px;border-radius:999px;font-size:10px;font-weight:800;${colors}">${badge.label}</span>`;
+      })
+      .join('');
+
     return `
-      <div style="min-width: 200px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-        <strong style="font-size: 14px; color: #17212b;">${place.name}</strong>
-        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: ${color}; margin-top: 2px;">${label}</div>
+      <div style="min-width: 240px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div style="display:flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:16px;background:#173f35;color:#fffaf1;font-size:18px;font-weight:900;line-height:1;flex:none;">${fit.score}<span style="font-size:8px;text-transform:uppercase;margin-left:3px;color:rgba(255,250,241,.72);">fit</span></div>
+          <div style="min-width:0;">
+            <strong style="font-size: 14px; color: #17212b; line-height:1.15; display:block;">${place.name}</strong>
+            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: ${color}; margin-top: 2px;">${label}</div>
+          </div>
+        </div>
         ${place.address ? `<div style="font-size: 12px; color: #51606f; margin-top: 4px;">${place.address}</div>` : ''}
+        <div style="font-size: 12px; color: #51606f; margin-top: 8px; font-weight: 600;">${fit.reason}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;">${badges}</div>
         ${place.laptopStatus === 'no' ? `<div style="font-size: 12px; color: #b42318; margin-top: 6px; font-weight: 600;">🚫 Not laptop-friendly</div>` : ''}
         ${place.laptopStatus === 'restricted' ? `<div style="font-size: 12px; color: #b26a00; margin-top: 6px; font-weight: 600;">⚠️ Laptop use restricted</div>` : ''}
         ${place.deletedAt ? `<div style="font-size: 12px; color: #b42318; margin-top: 6px; font-weight: 600;">⚠️ No longer marked laptop-friendly on OSM</div>` : ''}
