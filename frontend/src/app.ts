@@ -9,7 +9,7 @@ import './pages/list-page.js';
 import './pages/contribute-page.js';
 import './pages/faq-page.js';
 import './pages/about-page.js';
-import type { Place, BBox, PlaceCandidate } from './types.js';
+import type { Place, BBox, PlaceCandidate, PlaceCluster } from './types.js';
 import {
   parsePlaceIdFromPath,
   placeUrl,
@@ -52,7 +52,9 @@ export class RemoteWorkApp extends LitElement {
   static properties = {
     center: { type: Object },
     places: { type: Array },
+    clusters: { type: Array },
     candidates: { type: Array },
+    candidateClusters: { type: Array },
     selectedPlace: { type: Object },
     currentPage: { type: String },
     filters: { type: Object },
@@ -63,7 +65,9 @@ export class RemoteWorkApp extends LitElement {
 
   declare center: { lat: number; lon: number };
   declare places: Place[];
+  declare clusters: PlaceCluster[];
   declare candidates: PlaceCandidate[];
+  declare candidateClusters: PlaceCluster[];
   declare selectedPlace: Place | null;
   declare currentPage: Page;
   declare placesLoading: boolean;
@@ -83,7 +87,9 @@ export class RemoteWorkApp extends LitElement {
     super();
     this.center = { lat: 45.4642, lon: 9.19 };
     this.places = [];
+    this.clusters = [];
     this.candidates = [];
+    this.candidateClusters = [];
     this.selectedPlace = null;
     this.currentPage = 'map';
     this.placesLoading = false;
@@ -103,7 +109,9 @@ export class RemoteWorkApp extends LitElement {
       <div class="app-container">
         <remote-work-map
           .places=${this.places}
+          .clusters=${this.clusters}
           .candidates=${this.candidates}
+          .candidateClusters=${this.candidateClusters}
           .selectedPlace=${this.selectedPlace}
           .loading=${this.placesLoading}
           .loaded=${this.placesLoaded}
@@ -176,6 +184,7 @@ export class RemoteWorkApp extends LitElement {
       await this.fetchCandidates(bbox);
     } else {
       this.candidates = [];
+      this.candidateClusters = [];
     }
   }
 
@@ -206,11 +215,21 @@ export class RemoteWorkApp extends LitElement {
       }
       const data = await res.json();
 
-      this.places = data.features.map((f: any) => ({
-        ...f.properties,
-        latitude: f.geometry.coordinates[1],
-        longitude: f.geometry.coordinates[0],
-      }));
+      if (data.features[0]?.properties?.type === 'cluster') {
+        this.clusters = data.features.map((f: any) => ({
+          latitude: f.geometry.coordinates[1],
+          longitude: f.geometry.coordinates[0],
+          count: f.properties.count,
+        }));
+        this.places = [];
+      } else {
+        this.places = data.features.map((f: any) => ({
+          ...f.properties,
+          latitude: f.geometry.coordinates[1],
+          longitude: f.geometry.coordinates[0],
+        }));
+        this.clusters = [];
+      }
       this.placesLoaded = true;
     } catch (error) {
       console.error('Error fetching places:', error);
@@ -228,11 +247,21 @@ export class RemoteWorkApp extends LitElement {
       const res = await fetch(`/api/places/candidates?${params}`);
       const data = await res.json();
 
-      this.candidates = data.features.map((f: any) => ({
-        ...f.properties,
-        latitude: f.geometry.coordinates[1],
-        longitude: f.geometry.coordinates[0],
-      }));
+      if (data.features[0]?.properties?.type === 'cluster') {
+        this.candidateClusters = data.features.map((f: any) => ({
+          latitude: f.geometry.coordinates[1],
+          longitude: f.geometry.coordinates[0],
+          count: f.properties.count,
+        }));
+        this.candidates = [];
+      } else {
+        this.candidates = data.features.map((f: any) => ({
+          ...f.properties,
+          latitude: f.geometry.coordinates[1],
+          longitude: f.geometry.coordinates[0],
+        }));
+        this.candidateClusters = [];
+      }
     } catch (error) {
       console.error('Error fetching candidates:', error);
     }

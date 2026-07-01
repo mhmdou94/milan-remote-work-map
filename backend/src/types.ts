@@ -158,7 +158,19 @@ export interface GeoJSONFeature {
   properties: Omit<Place, 'latitude' | 'longitude'>;
 }
 
+export interface PlaceCluster {
+  latitude: number;
+  longitude: number;
+  count: number;
+}
+
+export interface ClusterGeoJSONFeature {
+  type: 'Feature';
+  geometry: { type: 'Point'; coordinates: [number, number] };
+  properties: { type: 'cluster'; count: number };
+}
+
 export interface GeoJSONCollection {
   type: 'FeatureCollection';
-  features: GeoJSONFeature[];
+  features: (GeoJSONFeature | ClusterGeoJSONFeature)[];
 }

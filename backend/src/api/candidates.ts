@@ -1,8 +1,14 @@
 import { Request, Response } from 'express';
 import { Knex } from 'knex';
-import { getPlaceCandidates } from '../db/queries.js';
-import { PlaceCandidate } from '../types.js';
+import { getPlaceCandidates, getCandidateClusters } from '../db/queries.js';
+import { ClusterGeoJSONFeature, PlaceCandidate, PlaceCluster } from '../types.js';
 import { parseBboxParam } from './bbox.js';
+
+const CLUSTER_THRESHOLD_DEG = 0.5;
+
+function clusterCellSize(latSpan: number): number {
+  return Math.max(0.05, Math.round((latSpan / 10) * 100) / 100);
+}
 
 export function createCandidatesRoute(db: Knex) {
   return async (req: Request, res: Response) => {
@@ -13,6 +19,17 @@ export function createCandidatesRoute(db: Knex) {
       }
       if (!bbox) {
         return res.status(400).json({ error: 'bbox query parameter required' });
+      }
+
+      if (bbox.maxLat - bbox.minLat > CLUSTER_THRESHOLD_DEG) {
+        const cellSize = clusterCellSize(bbox.maxLat - bbox.minLat);
+        const clusters = await getCandidateClusters(db, bbox, cellSize);
+        const geojson = {
+          type: 'FeatureCollection',
+          features: clusters.map(clusterToGeoJSON),
+        };
+        res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
+        return res.json(geojson);
       }
 
       const candidates = await getPlaceCandidates(db, bbox);
@@ -39,5 +56,13 @@ function candidateToGeoJSON(candidate: PlaceCandidate) {
       coordinates: [longitude, latitude],
     },
     properties,
+  };
+}
+
+function clusterToGeoJSON(cluster: PlaceCluster): ClusterGeoJSONFeature {
+  return {
+    type: 'Feature',
+    geometry: { type: 'Point', coordinates: [cluster.longitude, cluster.latitude] },
+    properties: { type: 'cluster', count: cluster.count },
   };
 }
