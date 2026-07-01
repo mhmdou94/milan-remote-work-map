@@ -16,6 +16,11 @@ import {
   upsertPlaceCandidate,
   pruneTransitStops,
   prunePlaceCandidates,
+  createWorkerRun,
+  createWorkerRunRegion,
+  finishWorkerRunRegion,
+  finishWorkerRun,
+  failWorkerRun,
 } from './db/queries.js';
 import type { Place, StagedPlace } from './types.js';
 
@@ -59,12 +64,13 @@ function toStagedPlace(place: Place): StagedPlace {
 
 async function syncPlaces(): Promise<void> {
   const db = await initDb();
+  const startedAt = new Date().toISOString();
+  const runId = await createWorkerRun(db, startedAt);
 
   try {
     console.log('\n🔄 Starting place sync from Geofabrik PBF extracts...\n');
 
     const activeRegions = resolveActiveRegions(process.env.PBF_REGIONS);
-    const now = new Date().toISOString();
 
     await clearStaging(db);
 
@@ -74,12 +80,16 @@ async function syncPlaces(): Promise<void> {
 
     for (const region of activeRegions) {
       console.log(`\n📍 Region: ${region.name}`);
+      const regionStartedAt = new Date().toISOString();
+      const regionRowId = await createWorkerRunRegion(db, runId, region.name, regionStartedAt);
+
       const pbfPath = await downloadPbf(region);
 
       console.log(`  🔍 Extracting laptop=yes/no/restricted places with osmium...`);
       const fetched = await extractPlacesFromPbf(pbfPath);
       console.log(`  📦 Staging ${fetched.length} places from ${region.name}...`);
 
+      const now = new Date().toISOString();
       for (const place of fetched) {
         if (!place.osmId) continue;
         await insertStaged(db, toStagedPlace(place), now);
@@ -105,6 +115,15 @@ async function syncPlaces(): Promise<void> {
           seenCandidateIds.add(candidate.id);
         }
       });
+
+      await finishWorkerRunRegion(
+        db,
+        regionRowId,
+        new Date().toISOString(),
+        fetched.length,
+        transitStops.length,
+        candidates.length
+      );
     }
 
     const staged = await getAllStaged(db);
@@ -155,7 +174,7 @@ async function syncPlaces(): Promise<void> {
           osmTags: stagedPlace.osmTags,
           source: 'osm',
           verified: false,
-          lastSynced: now,
+          lastSynced: new Date().toISOString(),
         });
         inserted++;
         continue;
@@ -190,7 +209,7 @@ async function syncPlaces(): Promise<void> {
         toiletsWheelchair: stagedPlace.toiletsWheelchair,
         dog: stagedPlace.dog,
         osmTags: stagedPlace.osmTags,
-        lastSynced: now,
+        lastSynced: new Date().toISOString(),
         deletedAt: null,
       });
       updated++;
@@ -204,7 +223,7 @@ async function syncPlaces(): Promise<void> {
       const removedIds = await softDeleteMissingOsmPlaces(
         db,
         staged.map((s) => s.osmId),
-        now
+        new Date().toISOString()
       );
       removedCount = removedIds.length;
 
@@ -218,6 +237,16 @@ async function syncPlaces(): Promise<void> {
       );
     }
 
+    await finishWorkerRun(db, runId, new Date().toISOString(), {
+      placesFetched: totalFetched,
+      inserted,
+      updated,
+      restored,
+      deleted: removedCount,
+      transitPruned: prunedTransitCount,
+      candidatesPruned: prunedCandidateCount,
+    });
+
     await closeDb(db);
 
     console.log(`\n✅ Sync complete!`);
@@ -229,7 +258,9 @@ async function syncPlaces(): Promise<void> {
     );
     console.log(`📍 API ready: http://localhost:3000/api/places?bbox=45.3,9.0,45.6,9.4\n`);
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
     console.error('\n❌ Sync failed:', error);
+    await failWorkerRun(db, runId, new Date().toISOString(), message).catch(() => {});
     process.exit(1);
   }
 }

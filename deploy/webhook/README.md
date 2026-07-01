@@ -2,7 +2,7 @@
 
 Tiny HTTP server that receives an authenticated `POST /deploy` and runs `docker compose pull && docker compose up -d` against the host's Docker daemon (the host socket is bind-mounted in — this container effectively has root on the host, so the token must stay secret and the port must never be published beyond `127.0.0.1`).
 
-CI (`.github/workflows/docker-build.yml`) calls this over a Cloudflare Tunnel hostname after it pushes a new app image, so the Pi pulls and restarts within seconds of a build finishing instead of waiting on a polling interval.
+CI (`.github/workflows/docker-build.yml`) calls this over a Cloudflare Tunnel hostname after it pushes a new app image, so the Pi pulls and restarts within seconds of a build finishing instead of waiting on a polling interval. The webhook image itself is built by `.github/workflows/docker-build-deploy-webhook.yml`.
 
 ## Environment variables
 

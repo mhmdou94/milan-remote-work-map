@@ -77,3 +77,34 @@ export interface PlaceCandidate {
 }
 
 export type InternetAccess = 'yes' | 'no' | 'wired' | 'wlan';
+
+export interface WorkerRunRegion {
+  regionName: string;
+  startedAt: string;
+  completedAt: string | null;
+  placesFetched: number | null;
+  transitStops: number | null;
+  candidates: number | null;
+}
+
+export interface WorkerRun {
+  startedAt: string;
+  completedAt: string | null;
+  status: 'running' | 'success' | 'failed';
+  error: string | null;
+  placesFetched: number | null;
+  inserted: number | null;
+  updated: number | null;
+  restored: number | null;
+  deleted: number | null;
+  transitPruned: number | null;
+  candidatesPruned: number | null;
+  regions: WorkerRunRegion[];
+}
+
+export interface HealthInfo {
+  status: string;
+  buildDate: string;
+  buildSha: string;
+  lastWorkerRun: WorkerRun | null;
+}

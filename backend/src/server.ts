@@ -7,6 +7,7 @@ import { createPlacesRoute, createCitiesRoute } from './api/places.js';
 import { createNearbyTransitRoute } from './api/transit.js';
 import { createCandidatesRoute } from './api/candidates.js';
 import { createPlaceByIdRoute } from './api/place-detail.js';
+import { createHealthRoute } from './api/health.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Mirrors both the repo layout (backend/src or backend/dist, frontend/dist as
@@ -30,11 +31,7 @@ async function start() {
     next();
   });
 
-  // Health check
-  app.get('/health', (req, res) => {
-    res.json({ status: 'ok' });
-  });
-
+  app.get('/api/health', createHealthRoute(db));
   app.get('/api/places', createPlacesRoute(db));
   app.get('/api/places/candidates', createCandidatesRoute(db));
   app.get('/api/places/:id', createPlaceByIdRoute(db));
