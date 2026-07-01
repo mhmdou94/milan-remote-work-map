@@ -11,7 +11,7 @@ CI (`.github/workflows/docker-build.yml`) calls this over a Cloudflare Tunnel ho
 | `DEPLOY_WEBHOOK_TOKEN`  | _(required, no default)_        | Bearer token expected on `Authorization: Bearer <token>`. Generate with `openssl rand -hex 32`. |
 | `WEBHOOK_PORT`          | `9090`                          | Port the server listens on inside the container.             |
 | `COMPOSE_FILE`          | `/workspace/docker-compose.yml` | Path *inside this container* to the compose file to operate on. |
-| `COMPOSE_SERVICE`       | `app`                           | The compose service to pull + recreate.                      |
+| `COMPOSE_SERVICES`      | _(empty = all services)_        | Comma-separated list of compose services to pull + recreate. When empty, operates on the entire stack. |
 | `DEPLOY_COOLDOWN_MINUTES` | `5`                           | Minimum minutes between deploys. Requests within the window get a `429` with a `Retry-After` header. |
 
 ## Usage
@@ -54,7 +54,7 @@ This container runs `docker compose` *inside a container*, against the *host's* 
 
 ### Updating the webhook itself
 
-This container doesn't include itself in the default `COMPOSE_SERVICE`, so a new `deploy-webhook` image isn't auto-applied (the webhook would be killing its own container mid-update, which is racy). When this image changes, update it manually on the Pi:
+By default `COMPOSE_SERVICES` is empty and the webhook deploys the entire stack — which excludes itself only if you opt it out. Because restarting itself mid-update is racy, it's safest to update the webhook manually on the Pi:
 
 ```sh
 docker compose pull deploy-webhook && docker compose up -d deploy-webhook
