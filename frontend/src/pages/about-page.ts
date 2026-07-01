@@ -95,7 +95,10 @@ export class AboutPage extends LitElement {
       <dl>
         <dt>Last sync</dt>
         <dd>${run.completedAt ?? run.startedAt}${run.status === 'failed' ? ' ⚠ failed' : ''}</dd>
-        ${summary ? html`<dt>Changes</dt><dd>${summary}</dd>` : null}
+        ${summary
+          ? html`<dt>Changes</dt>
+              <dd>${summary}</dd>`
+          : null}
       </dl>
       ${run.regions.length > 0
         ? html`
