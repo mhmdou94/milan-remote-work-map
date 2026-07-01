@@ -59,14 +59,22 @@ test.describe('Place detail modal – amenities panel', () => {
       amenitiesSection.locator('.amenity', { hasText: 'WiFi network' })
     ).not.toBeVisible();
 
-    // Wheelchair is in the Accessibility section, not in Amenities
+    // Wheelchair and wheelchair toilets are in the Accessibility section, not in Amenities
     const accessibilitySection = modal.locator('.modal-section', { hasText: 'Accessibility' });
     await expect(accessibilitySection).toBeVisible();
+
     const wheelchairAmenity = accessibilitySection.locator('.amenity', {
       hasText: 'Wheelchair access',
     });
     await expect(wheelchairAmenity).toBeVisible();
     await expect(wheelchairAmenity.locator('.amenity-value')).toHaveText('Yes');
+
+    // Caffè Nero has no toiletsWheelchair mapped → shown as Unknown
+    const toiletWheelchairAmenity = accessibilitySection.locator('.amenity', {
+      hasText: 'Wheelchair toilets',
+    });
+    await expect(toiletWheelchairAmenity).toBeVisible();
+    await expect(toiletWheelchairAmenity.locator('.amenity-value')).toHaveText('Unknown');
 
     // Wheelchair must NOT appear inside the Amenities section
     await expect(
@@ -97,16 +105,32 @@ test.describe('Place detail modal – amenities panel', () => {
         .locator('.amenity', { hasText: 'Wheelchair access' })
         .locator('.amenity-value')
     ).toHaveText('Limited');
+
+    // Biblioteca Ambrosiana has toiletsWheelchair=yes
+    await expect(
+      accessibilitySection
+        .locator('.amenity', { hasText: 'Wheelchair toilets' })
+        .locator('.amenity-value')
+    ).toHaveText('Yes');
   });
 
-  test('hides Accessibility section when no wheelchair data is available', async ({ page }) => {
-    // Ristorante Alla Scala: internet=yes, sockets=yes, no wheelchair field
+  test('always shows Accessibility section, with Unknown when data is missing', async ({
+    page,
+  }) => {
+    // Ristorante Alla Scala: no wheelchair or toiletsWheelchair fields
     const modal = await openPlaceModal(page, 'Ristorante Alla Scala');
 
-    const amenitiesSection = modal.locator('.modal-section', { hasText: 'Amenities' }).first();
-    await expect(amenitiesSection).toBeVisible();
-
-    // Accessibility section should not exist
-    await expect(modal.locator('.modal-section', { hasText: 'Accessibility' })).not.toBeVisible();
+    const accessibilitySection = modal.locator('.modal-section', { hasText: 'Accessibility' });
+    await expect(accessibilitySection).toBeVisible();
+    await expect(
+      accessibilitySection
+        .locator('.amenity', { hasText: 'Wheelchair access' })
+        .locator('.amenity-value')
+    ).toHaveText('Unknown');
+    await expect(
+      accessibilitySection
+        .locator('.amenity', { hasText: 'Wheelchair toilets' })
+        .locator('.amenity-value')
+    ).toHaveText('Unknown');
   });
 });
