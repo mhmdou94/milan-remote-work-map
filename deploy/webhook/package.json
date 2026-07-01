@@ -1,0 +1,14 @@
+{
+  "name": "@milan-remote/deploy-webhook",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "eslint server.mjs",
+    "format": "prettier --write server.mjs",
+    "format:check": "prettier --check server.mjs"
+  },
+  "devDependencies": {
+    "eslint": "^8.56.0"
+  }
+}
