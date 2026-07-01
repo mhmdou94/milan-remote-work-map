@@ -11,6 +11,7 @@ import {
 } from '../lib/transit.js';
 import { googleMapsIcon, appleMapsIcon, osmIcon } from '../lib/icons.js';
 import { getCategoryInfo } from '../categories.js';
+import { getWorkFit } from '../lib/work-fit.js';
 
 const STAR_VALUES = [20, 40, 60, 80, 100];
 const NEARBY_RADIUS_METERS = 500;
@@ -71,7 +72,7 @@ export class PlaceDetailModal extends LitElement {
         -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     }
 
-    @media (min-width: 861px) {
+    @media (min-width: 921px) {
       :host {
         top: auto;
         bottom: 16px;
@@ -94,7 +95,7 @@ export class PlaceDetailModal extends LitElement {
       animation: slideUp 0.25s ease-out;
     }
 
-    @media (min-width: 861px) {
+    @media (min-width: 921px) {
       .modal-backdrop {
         border-radius: var(--radius-xl, 26px);
         max-height: calc(100vh - 32px);
@@ -189,6 +190,101 @@ export class PlaceDetailModal extends LitElement {
     .address {
       font-size: 14px;
       color: var(--color-text-muted, #51606f);
+    }
+
+    .work-summary {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 14px;
+      align-items: center;
+      padding: 15px;
+      border: 1px solid var(--color-border-soft, #e3eaf1);
+      border-radius: 22px;
+      background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(255, 250, 241, 0.88)),
+        radial-gradient(circle at 0% 0%, rgba(239, 111, 69, 0.14), transparent 12rem);
+    }
+
+    .work-score {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 74px;
+      height: 74px;
+      border-radius: 24px;
+      background: var(--color-accent, #173f35);
+      color: #fffaf1;
+      font-size: 28px;
+      font-weight: 950;
+      line-height: 1;
+      box-shadow: 0 14px 30px rgba(23, 63, 53, 0.2);
+    }
+
+    .work-score span {
+      margin-top: 5px;
+      color: rgba(255, 250, 241, 0.72);
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .work-summary-main {
+      min-width: 0;
+    }
+
+    .work-summary-label {
+      font-size: 17px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      color: var(--color-text, #17212b);
+    }
+
+    .work-summary-reason,
+    .work-summary-call,
+    .work-summary-confidence {
+      margin-top: 5px;
+      color: var(--color-text-muted, #51606f);
+      font-size: 12px;
+      line-height: 1.4;
+      font-weight: 650;
+    }
+
+    .work-summary-call strong,
+    .work-summary-confidence strong {
+      color: var(--color-text, #17212b);
+      font-weight: 900;
+    }
+
+    .work-summary-badges {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding-top: 2px;
+    }
+
+    .work-summary-badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 25px;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: var(--color-bg-chip, #eef3f7);
+      color: var(--color-text-muted, #51606f);
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .work-summary-badge.good {
+      background: var(--color-good-bg, #effbf6);
+      color: var(--color-good-text, #006b55);
+    }
+
+    .work-summary-badge.warn {
+      background: #fff7e8;
+      color: #9a5b00;
     }
 
     .amenities {
@@ -629,6 +725,7 @@ export class PlaceDetailModal extends LitElement {
                 </div>
               `
             : ''}
+          ${this.renderWorkSummary()}
           ${this.place.address
             ? html`
                 <div class="modal-section">
@@ -1180,6 +1277,31 @@ export class PlaceDetailModal extends LitElement {
       <div class="modal-section">
         <div class="modal-section-title">Accessibility</div>
         <div class="amenities">${accessibility.map((a) => this.renderAmenity(a))}</div>
+      </div>
+    `;
+  }
+
+  private renderWorkSummary() {
+    if (!this.place) return html``;
+
+    const fit = getWorkFit(this.place);
+    return html`
+      <div class="work-summary">
+        <div class="work-score">${fit.score}<span>Work fit</span></div>
+        <div class="work-summary-main">
+          <div class="work-summary-label">${fit.label}</div>
+          <div class="work-summary-reason">${fit.reason}</div>
+          <div class="work-summary-call"><strong>Calls:</strong> ${fit.callSuitability}</div>
+          <div class="work-summary-confidence"><strong>Freshness:</strong> ${fit.confidence}</div>
+        </div>
+        <div class="work-summary-badges">
+          ${fit.badges.map(
+            (badge) =>
+              html`<span class="work-summary-badge ${badge.tone}" title=${badge.title}
+                >${badge.label}</span
+              >`
+          )}
+        </div>
       </div>
     `;
   }

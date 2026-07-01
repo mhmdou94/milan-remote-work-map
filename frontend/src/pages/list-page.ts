@@ -3,8 +3,7 @@ import { state } from 'lit/decorators.js';
 import { pageHostStyles } from './page-styles.js';
 import { getCategoryInfo } from '../categories.js';
 import type { Place } from '../types.js';
-
-type WorkBadge = { label: string; title: string; tone: 'good' | 'warn' | 'muted' };
+import { getWorkFit } from '../lib/work-fit.js';
 
 export class ListPage extends LitElement {
   @state() declare cities: string[];
@@ -411,6 +410,58 @@ export class ListPage extends LitElement {
         color: #9a5b00;
       }
 
+      .work-fit-row {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 10px;
+        align-items: center;
+        padding: 10px;
+        border-radius: 18px;
+        background: rgba(248, 245, 239, 0.84);
+        border: 1px solid var(--color-border-soft, #e3eaf1);
+      }
+
+      .work-fit-score {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 52px;
+        height: 52px;
+        border-radius: 16px;
+        background: var(--color-accent, #173f35);
+        color: #fffaf1;
+        font-size: 18px;
+        font-weight: 950;
+        line-height: 1;
+      }
+
+      .work-fit-score span {
+        margin-top: 3px;
+        color: rgba(255, 250, 241, 0.72);
+        font-size: 8px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .work-fit-copy strong {
+        display: block;
+        color: var(--color-text, #17212b);
+        font-size: 13px;
+        line-height: 1.2;
+      }
+
+      .work-fit-copy span {
+        display: block;
+        margin-top: 3px;
+        color: var(--color-text-muted, #51606f);
+        font-size: 12px;
+        line-height: 1.35;
+        font-weight: 650;
+      }
+
       @media (max-width: 900px) {
         .hero,
         .content-grid {
@@ -560,7 +611,7 @@ export class ListPage extends LitElement {
       <div class="results-list">
         ${this.results.map((place) => {
           const { emoji, color } = getCategoryInfo(place.category);
-          const badges = this.workBadges(place);
+          const workFit = getWorkFit(place);
           return html`
             <button
               class="result-item"
@@ -576,8 +627,15 @@ export class ListPage extends LitElement {
                 </div>
                 ${place.address ? html`<div class="result-address">${place.address}</div>` : ''}
               </span>
+              <span class="work-fit-row">
+                <span class="work-fit-score">${workFit.score}<span>Fit</span></span>
+                <span class="work-fit-copy">
+                  <strong>${workFit.label}</strong>
+                  <span>${workFit.reason}</span>
+                </span>
+              </span>
               <span class="result-badges">
-                ${badges.map(
+                ${workFit.badges.map(
                   (badge) =>
                     html`<span class=${badge.tone} title=${badge.title}>${badge.label}</span>`
                 )}
@@ -595,38 +653,6 @@ export class ListPage extends LitElement {
 
   private activeFilterCount() {
     return Object.values(this.filters).filter(Boolean).length;
-  }
-
-  private workBadges(place: Place): WorkBadge[] {
-    const badges: WorkBadge[] = [];
-
-    if (place.laptopStatus === 'no') {
-      badges.push({ label: '🚫 No laptops', title: 'Not laptop-friendly', tone: 'warn' });
-    }
-    if (place.laptopStatus === 'restricted') {
-      badges.push({ label: '⚠️ Restricted', title: 'Laptop use restricted', tone: 'warn' });
-    }
-    if (place.laptopStatus === 'yes') {
-      badges.push({ label: 'Laptop friendly', title: 'Laptop friendly', tone: 'good' });
-    }
-    if (
-      place.internetAccess === 'yes' ||
-      place.internetAccess === 'wired' ||
-      place.internetAccess === 'wlan'
-    ) {
-      badges.push({ label: '📶 Internet access', title: 'Internet access', tone: 'good' });
-    }
-    if (place.sockets === 'yes' || place.sockets === 'many') {
-      badges.push({
-        label: place.sockets === 'many' ? '🔌 Many sockets' : '🔌 Sockets',
-        title: 'Power sockets',
-        tone: 'good',
-      });
-    }
-
-    return badges.length > 0
-      ? badges
-      : [{ label: 'Needs details', title: 'Needs details', tone: 'muted' }];
   }
 
   private selectPlace(place: Place) {

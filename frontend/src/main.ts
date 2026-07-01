@@ -20,6 +20,7 @@ if (app) {
     const onMapPage = app_.currentPage === 'map';
     if (filterPopover) {
       filterPopover.hidden = !onMapPage;
+      filterPopover.filters = app_.filters;
       if (!onMapPage) filterPopover.open = false;
     }
     if (legendPopover) {
@@ -56,6 +57,9 @@ if (app) {
   }
 
   remoteWorkApp.addEventListener('ui-state-change', syncGlobalUi);
+  remoteWorkApp.addEventListener('filters-state-change', (event: Event) => {
+    if (filterPopover) filterPopover.filters = (event as CustomEvent).detail;
+  });
   syncGlobalUi();
 } else {
   console.error('App element not found');

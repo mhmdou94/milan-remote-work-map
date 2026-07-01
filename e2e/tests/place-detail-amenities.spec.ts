@@ -29,6 +29,12 @@ test.describe('Place detail modal – amenities panel', () => {
     // Caffè Nero: internet=yes, sockets=yes, wifi, airConditioning, outdoorSeating, smoking, wheelchair=yes
     const modal = await openPlaceModal(page, 'Caffè Nero');
 
+    const workSummary = modal.locator('.work-summary');
+    await expect(workSummary).toBeVisible();
+    await expect(workSummary).toContainText('Work fit');
+    await expect(workSummary).toContainText('Internet and power are both listed.');
+    await expect(workSummary).toContainText('Calls:');
+
     const amenitiesSection = modal.locator('.modal-section', { hasText: 'Amenities' }).first();
     await expect(amenitiesSection).toBeVisible();
 
