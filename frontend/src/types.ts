@@ -6,7 +6,7 @@ export interface Place {
   longitude: number;
   address?: string;
   city?: string;
-  internetAccess?: 'yes' | 'no' | 'wired';
+  internetAccess?: InternetAccess;
   sockets?: 'yes' | 'no' | 'many';
   openingHours?: string;
   laptopStatus?: 'yes' | 'no' | 'restricted';
@@ -71,7 +71,9 @@ export interface PlaceCandidate {
   latitude: number;
   longitude: number;
   address?: string;
-  internetAccess?: 'yes' | 'no' | 'wired';
+  internetAccess?: InternetAccess;
   sockets?: 'yes' | 'no' | 'many';
   osmTags?: Record<string, string>;
 }
+
+export type InternetAccess = 'yes' | 'no' | 'wired' | 'wlan';

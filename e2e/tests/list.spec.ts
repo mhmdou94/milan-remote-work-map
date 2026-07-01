@@ -28,6 +28,11 @@ test.describe('List page', () => {
     await expect(results).toHaveCount(6);
     await expect(listPage).toContainText('Caffè Nero');
 
+    const wifiInternetItem = listPage.locator('.result-item', {
+      hasText: 'Biblioteca Ambrosiana',
+    });
+    await expect(wifiInternetItem.locator('[title="Internet access"]')).toBeVisible();
+
     await results.first().click();
 
     const modal = page.locator('place-detail-modal .modal-backdrop');

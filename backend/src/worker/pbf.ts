@@ -5,7 +5,7 @@ import os from 'os';
 import path from 'path';
 import { centroid } from '@turf/centroid';
 import type { Feature, FeatureCollection, Geometry, Point } from 'geojson';
-import { Place } from '../types.js';
+import { InternetAccess, Place } from '../types.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -142,13 +142,12 @@ export function formatAddress(tags: Record<string, string>): string | undefined 
   return parts.length > 0 ? parts.join(', ') : undefined;
 }
 
-export function normalizeInternetAccess(
-  value: string | undefined
-): 'yes' | 'no' | 'wired' | undefined {
+export function normalizeInternetAccess(value: string | undefined): InternetAccess | undefined {
   if (!value) return undefined;
   const lower = value.toLowerCase();
   if (lower === 'yes' || lower === 'true') return 'yes';
-  if (lower === 'wired' || lower === 'wlan' || lower === 'wifi') return 'wired';
+  if (lower === 'wlan' || lower === 'wifi') return 'wlan';
+  if (lower === 'wired') return 'wired';
   if (lower === 'no' || lower === 'false') return 'no';
   return undefined;
 }
