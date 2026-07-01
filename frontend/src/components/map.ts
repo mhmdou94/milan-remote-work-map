@@ -39,6 +39,11 @@ export class MapComponent extends LitElement {
       background: #ebe4d8;
     }
 
+    #map-container .leaflet-top,
+    #map-container .leaflet-bottom {
+      z-index: 400;
+    }
+
     /* menu-nav is a fixed top bar that overlaps the map's top-left corner,
        where Leaflet anchors its default zoom control — push it down clear
        of the bar. Leaflet renders its controls inside this shadow root, so
@@ -154,6 +159,11 @@ export class MapComponent extends LitElement {
       font-weight: 800;
     }
 
+    .locate-btn:disabled {
+      cursor: wait;
+      opacity: 0.75;
+    }
+
     .retry-btn {
       padding: 7px 10px;
       color: var(--color-primary, #006cff);
@@ -163,12 +173,29 @@ export class MapComponent extends LitElement {
     .locate-btn {
       position: absolute;
       left: 16px;
-      bottom: 24px;
-      z-index: 450;
+      bottom: calc(24px + env(safe-area-inset-bottom));
+      z-index: 650;
       padding: 10px 14px;
       box-shadow: var(--shadow-card, 0 12px 32px rgba(15, 23, 42, 0.08));
       backdrop-filter: blur(16px);
       background: rgba(255, 255, 255, 0.95);
+    }
+
+    .location-message {
+      position: absolute;
+      left: 16px;
+      bottom: calc(76px + env(safe-area-inset-bottom));
+      z-index: 650;
+      max-width: min(320px, calc(100vw - 32px));
+      padding: 9px 12px;
+      border: 1px solid var(--color-border, #d7e0e8);
+      border-radius: var(--radius-md, 14px);
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: var(--shadow-card, 0 12px 32px rgba(15, 23, 42, 0.08));
+      color: var(--color-text-muted, #51606f);
+      font-size: 12px;
+      font-weight: 700;
+      backdrop-filter: blur(16px);
     }
 
     .retry-btn:hover,
@@ -189,8 +216,14 @@ export class MapComponent extends LitElement {
       }
 
       .locate-btn {
-        bottom: 96px;
+        bottom: calc(96px + env(safe-area-inset-bottom));
         left: 12px;
+      }
+
+      .location-message {
+        bottom: calc(148px + env(safe-area-inset-bottom));
+        left: 12px;
+        max-width: min(320px, calc(100vw - 24px));
       }
     }
   `;
@@ -203,6 +236,8 @@ export class MapComponent extends LitElement {
     loaded: { type: Boolean },
     error: { type: String },
     showEmptyState: { type: Boolean, state: true },
+    locating: { type: Boolean, state: true },
+    locationMessage: { type: String, state: true },
   };
 
   declare places: Place[];
@@ -212,10 +247,13 @@ export class MapComponent extends LitElement {
   declare loaded: boolean;
   declare error: string | null;
   declare showEmptyState: boolean;
+  declare locating: boolean;
+  declare locationMessage: string | null;
   map: L.Map | null;
   userLocation: { lat: number; lon: number } | null;
   markerCluster: any;
   candidateLayer: L.LayerGroup | null;
+  userLocationMarker: L.CircleMarker | null;
   private resizeObserver: ResizeObserver | null = null;
   private markers: Map<string, L.Marker> = new Map();
 
@@ -228,19 +266,30 @@ export class MapComponent extends LitElement {
     this.loaded = false;
     this.error = null;
     this.showEmptyState = false;
+    this.locating = false;
+    this.locationMessage = null;
     this.map = null;
     this.userLocation = null;
     this.markerCluster = null;
     this.candidateLayer = null;
+    this.userLocationMarker = null;
   }
 
   render() {
     return html`
       ${LEAFLET_CSS}
       <div id="map-container"></div>
-      <button class="locate-btn" @click=${this.requestGeolocation} type="button">
-        ⌖ Locate me
+      <button
+        class="locate-btn"
+        @click=${this.requestGeolocation}
+        type="button"
+        ?disabled=${this.locating}
+      >
+        ${this.locating ? 'Locating...' : '⌖ Locate me'}
       </button>
+      ${this.locationMessage
+        ? html`<div class="location-message" role="status">${this.locationMessage}</div>`
+        : ''}
       ${this.loading && !this.loaded
         ? html`<div class="map-message">Loading laptop-friendly places…</div>`
         : ''}
@@ -461,10 +510,22 @@ export class MapComponent extends LitElement {
   }
 
   private requestGeolocation = () => {
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation) {
+      this.locationMessage = 'Location is not available in this browser.';
+      return;
+    }
+
+    if (!window.isSecureContext) {
+      this.locationMessage = 'Location needs HTTPS or localhost to work.';
+      return;
+    }
+
+    this.locating = true;
+    this.locationMessage = null;
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        this.locating = false;
         this.userLocation = {
           lat: pos.coords.latitude,
           lon: pos.coords.longitude,
@@ -473,8 +534,8 @@ export class MapComponent extends LitElement {
         if (this.map) {
           this.map.setView([this.userLocation.lat, this.userLocation.lon], 14);
 
-          // Add user location marker
-          L.circleMarker([this.userLocation.lat, this.userLocation.lon], {
+          this.userLocationMarker?.remove();
+          this.userLocationMarker = L.circleMarker([this.userLocation.lat, this.userLocation.lon], {
             radius: 8,
             fillColor: '#4285F4',
             color: '#fff',
@@ -484,11 +545,25 @@ export class MapComponent extends LitElement {
           }).addTo(this.map);
         }
       },
-      () => {
-        return;
-      }
+      (error) => {
+        this.locating = false;
+        this.locationMessage = this.geolocationErrorMessage(error);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
     );
   };
+
+  private geolocationErrorMessage(error: GeolocationPositionError) {
+    if (error.code === error.PERMISSION_DENIED) {
+      return 'Location permission was denied. Enable it in your browser settings and try again.';
+    }
+
+    if (error.code === error.POSITION_UNAVAILABLE) {
+      return 'Could not determine your location. Check GPS/location services and try again.';
+    }
+
+    return 'Location timed out. Try again from a spot with better GPS signal.';
+  }
 
   private retryPlaces = () => {
     this.dispatchEvent(new CustomEvent('retry-places'));

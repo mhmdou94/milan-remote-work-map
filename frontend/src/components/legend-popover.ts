@@ -122,6 +122,11 @@ export class LegendPopover extends LitElement {
         min-width: 100px;
         height: 44px;
       }
+
+      .legend-popover {
+        max-height: calc(100dvh - 160px - env(safe-area-inset-bottom));
+        overflow-y: auto;
+      }
     }
   `;
 
@@ -186,6 +191,9 @@ export class LegendPopover extends LitElement {
 
   private toggleOpen() {
     this.open = !this.open;
+    if (this.open) {
+      this.dispatchEvent(new CustomEvent('legend-opened'));
+    }
   }
 
   private handleKeydown = (event: KeyboardEvent) => {

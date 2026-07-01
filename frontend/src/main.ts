@@ -43,6 +43,16 @@ if (app) {
       const filters = (event as CustomEvent).detail;
       app_.applyFilters(filters);
     });
+
+    filterPopover.addEventListener('filter-opened', () => {
+      if (legendPopover) legendPopover.open = false;
+    });
+  }
+
+  if (legendPopover) {
+    legendPopover.addEventListener('legend-opened', () => {
+      if (filterPopover) filterPopover.open = false;
+    });
   }
 
   remoteWorkApp.addEventListener('ui-state-change', syncGlobalUi);
