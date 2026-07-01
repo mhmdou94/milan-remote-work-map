@@ -5,7 +5,11 @@ import { execFile } from 'node:child_process';
 const PORT = process.env.WEBHOOK_PORT || 9090;
 const TOKEN = process.env.DEPLOY_WEBHOOK_TOKEN;
 const COMPOSE_FILE = process.env.COMPOSE_FILE || '/workspace/docker-compose.yml';
-const COMPOSE_SERVICE = process.env.COMPOSE_SERVICE || 'app';
+const COMPOSE_SERVICES = process.env.COMPOSE_SERVICES
+  ? process.env.COMPOSE_SERVICES.split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+  : [];
 const DEPLOY_COOLDOWN_MS = (Number(process.env.DEPLOY_COOLDOWN_MINUTES) || 5) * 60 * 1000;
 
 if (!TOKEN) {
@@ -34,8 +38,8 @@ function dockerCompose(args) {
 }
 
 async function deploy() {
-  const pullOut = await dockerCompose(['pull', COMPOSE_SERVICE]);
-  const upOut = await dockerCompose(['up', '-d', '--remove-orphans', COMPOSE_SERVICE]);
+  const pullOut = await dockerCompose(['pull', ...COMPOSE_SERVICES]);
+  const upOut = await dockerCompose(['up', '-d', '--remove-orphans', ...COMPOSE_SERVICES]);
   return `${pullOut}\n${upOut}`;
 }
 
@@ -80,5 +84,6 @@ const server = createServer(async (req, res) => {
 });
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`deploy webhook listening on :${PORT}`);
+  const scope = COMPOSE_SERVICES.length ? COMPOSE_SERVICES.join(', ') : 'all services';
+  console.log(`deploy webhook listening on :${PORT} (scope: ${scope})`);
 });

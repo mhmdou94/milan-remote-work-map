@@ -66,6 +66,6 @@ jobs:
             echo "::warning title=Deploy skipped::DEPLOY_WEBHOOK_URL or DEPLOY_WEBHOOK_TOKEN secret is not set — Pi was not notified"
             exit 0
           fi
-          curl --fail --silent --show-error -X POST "$DEPLOY_WEBHOOK_URL" \
+          curl --fail --verbose -X POST "$DEPLOY_WEBHOOK_URL" \
             -H "Authorization: Bearer $DEPLOY_WEBHOOK_TOKEN" \
             --max-time 30
