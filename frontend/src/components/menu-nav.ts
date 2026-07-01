@@ -173,9 +173,9 @@ export class MenuNav extends LitElement {
     return html`
       <div class="nav-shell">
         <button class="brand" @click=${() => this.changePage('map')} aria-label="Go to map">
-          <span class="brand-mark">MR</span>
+          <span class="brand-mark">RW</span>
           <span class="brand-copy">
-            <span class="brand-title">Milan Remote Work</span>
+            <span class="brand-title">Remote Work</span>
             <span class="brand-subtitle">Laptop-friendly places</span>
           </span>
         </button>
