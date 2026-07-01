@@ -1,13 +1,8 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 // Programmatically pan the Leaflet map to a given lat/lon via the shadow DOM.
 // Returns once Leaflet has finished the move (moveend fired).
-async function panMapTo(
-  page: Parameters<Parameters<typeof test>[1]>[0],
-  lat: number,
-  lon: number,
-  zoom = 13
-) {
+async function panMapTo(page: Page, lat: number, lon: number, zoom = 13) {
   await page.evaluate(
     ({ lat, lon, zoom }) => {
       const app = document.querySelector('remote-work-app') as any;
